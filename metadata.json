@@ -1,0 +1,6 @@
+{
+  "name": "IELTS Nova AI",
+  "description": "AI-powered IELTS preparation platform with tutoring, listening, reading, writing & speaking analysis, translation with verification, and smart vocabulary.",
+  "requestFramePermissions": ["microphone"],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
