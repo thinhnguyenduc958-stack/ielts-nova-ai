@@ -15,6 +15,7 @@ import {
   Download,
   Languages,
   ScanText,
+  Sparkles,
 } from 'lucide-react';
 import { NovaLogo } from './NovaLogo';
 
@@ -38,6 +39,7 @@ const NAV_SECTIONS: NavSection[] = [
     title: 'Overview',
     items: [
       { id: 'home', label: 'Home', icon: Compass },
+      { id: 'landing', label: 'Landing Showcase', icon: Sparkles, badge: 'NEW' },
       { id: 'learn', label: 'Study Hub', icon: GraduationCap },
     ],
   },

@@ -18,6 +18,7 @@ import { AITutorModule } from './components/AITutorModule';
 import { ProgressModule } from './components/ProgressModule';
 import { ProfileModule } from './components/ProfileModule';
 import { DownloadModule } from './components/DownloadModule';
+import { LandingPageModule } from './components/LandingPageModule';
 import { SplashScreen } from './components/SplashScreen';
 import { OnboardingModal } from './components/OnboardingModal';
 import { NovaVoiceDialog } from './components/NovaVoiceDialog';
@@ -63,6 +64,7 @@ const MainContent: React.FC = () => {
         {/* Dynamic Main Workspace Container */}
         <main className="flex-1 overflow-x-hidden p-4 sm:p-6 lg:p-8 max-w-7xl mx-auto w-full pb-28 md:pb-10">
           {currentTab === 'home' && <HomeDashboard />}
+          {currentTab === 'landing' && <LandingPageModule />}
           {(currentTab === 'learn' || currentTab === 'practice') && <LearnHub />}
           {currentTab === 'listening' && <ListeningModule />}
           {currentTab === 'reading' && <ReadingModule />}

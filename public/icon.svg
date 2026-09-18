@@ -1,44 +1,85 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" fill="none">
   <defs>
-    <radialGradient id="novaGlow" cx="50%" cy="50%" r="50%">
-      <stop offset="0%" stop-color="#FFF2D6" />
-      <stop offset="25%" stop-color="#F5B544" />
-      <stop offset="55%" stop-color="#DE7C18" />
-      <stop offset="85%" stop-color="#6E320A" />
-      <stop offset="100%" stop-color="#121318" />
-    </radialGradient>
-    <radialGradient id="coreLight" cx="45%" cy="40%" r="40%">
+    <linearGradient id="bgGrad" x1="64" y1="32" x2="448" y2="480" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#4F46E5" />
+      <stop offset="60%" stop-color="#4338CA" />
+      <stop offset="100%" stop-color="#312E81" />
+    </linearGradient>
+    <linearGradient id="symbolGrad" x1="120" y1="100" x2="392" y2="400" gradientUnits="userSpaceOnUse">
       <stop offset="0%" stop-color="#FFFFFF" />
-      <stop offset="60%" stop-color="#FFDE99" />
-      <stop offset="100%" stop-color="#F5A623" />
-    </radialGradient>
-    <filter id="blurFilter" x="-20%" y="-20%" width="140%" height="140%">
-      <feGaussianBlur stdDeviation="12" />
+      <stop offset="100%" stop-color="#EEF2FF" />
+    </linearGradient>
+    <linearGradient id="orbitGrad" x1="80" y1="256" x2="432" y2="256" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#FFFFFF" stop-opacity="0.9" />
+      <stop offset="50%" stop-color="#C7D2FE" stop-opacity="0.3" />
+      <stop offset="100%" stop-color="#D9F99D" stop-opacity="0.95" />
+    </linearGradient>
+    <filter id="softGlow" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur stdDeviation="16" />
     </filter>
   </defs>
 
-  <!-- Deep dark luxury background with subtle rounded squircle -->
-  <rect width="512" height="512" rx="128" fill="#121318" />
+  <!-- Modern Squircle Container (App Icon standard) -->
+  <rect width="512" height="512" rx="120" fill="url(#bgGrad)" />
+  <rect x="2" y="2" width="508" height="508" rx="118" stroke="#FFFFFF" stroke-opacity="0.15" stroke-width="4" />
 
-  <!-- Outer Ambient Glow -->
-  <circle cx="256" cy="256" r="160" fill="url(#novaGlow)" opacity="0.6" filter="url(#blurFilter)" />
+  <!-- Radiant Soft Glow Field -->
+  <circle cx="256" cy="256" r="140" fill="#7C3AED" opacity="0.35" filter="url(#softGlow)" />
 
-  <!-- Orbital Stardust Rings -->
-  <ellipse cx="256" cy="256" rx="190" ry="80" stroke="#FFD285" stroke-width="1.5" stroke-dasharray="8 12" opacity="0.35" transform="rotate(-25 256 256)" />
-  <ellipse cx="256" cy="256" rx="180" ry="110" stroke="#FFE9BE" stroke-width="1.2" opacity="0.25" transform="rotate(35 256 256)" />
+  <!-- Sweeping Elliptical Orbit (Tilted -26 degrees) -->
+  <ellipse
+    cx="256"
+    cy="256"
+    rx="210"
+    ry="98"
+    transform="rotate(-26 256 256)"
+    stroke="url(#orbitGrad)"
+    stroke-width="12"
+    stroke-dasharray="320 48"
+    opacity="0.85"
+  />
 
-  <!-- Luminous Nova Sphere -->
-  <circle cx="256" cy="256" r="105" fill="url(#coreLight)" />
+  <!-- Letter 'N' Left Pillar -->
+  <rect
+    x="124"
+    y="110"
+    width="46"
+    height="292"
+    rx="23"
+    fill="url(#symbolGrad)"
+  />
 
-  <!-- Inner Refraction Layer -->
-  <circle cx="240" cy="235" r="85" fill="#FFFFFF" opacity="0.45" filter="url(#blurFilter)" />
+  <!-- Letter 'N' Right Pillar -->
+  <rect
+    x="342"
+    y="110"
+    width="46"
+    height="292"
+    rx="23"
+    fill="url(#symbolGrad)"
+  />
 
-  <!-- Signature Central 4-point Diamond Sparkle -->
-  <path d="M256 160 L266 246 L352 256 L266 266 L256 352 L246 266 L160 256 L246 246 Z" fill="#FFFFFF" opacity="0.95" />
-  <circle cx="256" cy="256" r="6" fill="#FFF9ED" />
+  <!-- Forward Diagonal Energy Beam -->
+  <path
+    d="M147 133 L365 379"
+    stroke="url(#symbolGrad)"
+    stroke-width="48"
+    stroke-linecap="round"
+  />
 
-  <!-- Satellite Micro Particle Sparkles -->
-  <circle cx="165" cy="180" r="3.5" fill="#FFECC2" opacity="0.8" />
-  <circle cx="360" cy="320" r="4.5" fill="#FFC966" opacity="0.75" />
-  <circle cx="340" cy="170" r="2.5" fill="#FFFFFF" opacity="0.85" />
+  <!-- Central Nova Intelligence Core Node -->
+  <circle
+    cx="256"
+    cy="256"
+    r="38"
+    fill="#10B981"
+  />
+
+  <!-- Inner Sparkle -->
+  <circle
+    cx="256"
+    cy="256"
+    r="16"
+    fill="#FFFFFF"
+  />
 </svg>

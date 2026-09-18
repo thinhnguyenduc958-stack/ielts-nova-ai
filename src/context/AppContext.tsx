@@ -4,6 +4,7 @@ import { initialUserProfile, sampleVocabulary } from '../data/mockIELTSData';
 
 export type AppTab =
   | 'home'
+  | 'landing'
   | 'learn'
   | 'practice'
   | 'listening'
