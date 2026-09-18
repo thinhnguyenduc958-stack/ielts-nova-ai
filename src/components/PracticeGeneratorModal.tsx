@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useApp } from '../context/AppContext';
 import { apiService } from '../services/apiService';
 import { IELTSSkill, IELTSBand } from '../types';
@@ -9,10 +9,11 @@ import {
 } from 'lucide-react';
 
 interface Props {
+  isOpen?: boolean;
   onClose: () => void;
 }
 
-export const PracticeGeneratorModal: React.FC<Props> = ({ onClose }) => {
+export const PracticeGeneratorModal: React.FC<Props> = ({ isOpen = true, onClose }) => {
   const { userProfile, showToast, recordActivity } = useApp();
 
   const [skill, setSkill] = useState<IELTSSkill>('Reading');
@@ -24,6 +25,19 @@ export const PracticeGeneratorModal: React.FC<Props> = ({ onClose }) => {
   const [generatedExercise, setGeneratedExercise] = useState<any | null>(null);
   const [userAnswers, setUserAnswers] = useState<Record<string, string>>({});
   const [submitted, setSubmitted] = useState(false);
+
+  useEffect(() => {
+    if (!isOpen) return;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        onClose();
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isOpen, onClose]);
+
+  if (!isOpen) return null;
 
   const handleGenerate = async () => {
     setLoading(true);
@@ -44,8 +58,18 @@ export const PracticeGeneratorModal: React.FC<Props> = ({ onClose }) => {
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-stone-900/50 p-4 backdrop-blur-xs">
-      <div className="w-full max-w-2xl overflow-hidden rounded-3xl border border-stone-200/80 bg-white shadow-xl dark:border-stone-800 dark:bg-stone-900">
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-stone-900/50 p-4 backdrop-blur-xs cursor-pointer"
+      onClick={(e) => {
+        if (e.target === e.currentTarget) {
+          onClose();
+        }
+      }}
+    >
+      <div
+        className="w-full max-w-2xl overflow-hidden rounded-3xl border border-stone-200/80 bg-white shadow-xl dark:border-stone-800 dark:bg-stone-900 cursor-default"
+        onClick={(e) => e.stopPropagation()}
+      >
         {/* Modal Header */}
         <div className="flex items-center justify-between border-b border-stone-100 bg-[#FAF9F5] px-6 py-4 dark:border-stone-800 dark:bg-stone-850">
           <div className="flex items-center gap-2.5">
@@ -59,7 +83,9 @@ export const PracticeGeneratorModal: React.FC<Props> = ({ onClose }) => {
           </div>
           <button
             onClick={onClose}
-            className="rounded-full p-1 text-stone-400 hover:bg-stone-200/60 hover:text-stone-700 dark:hover:bg-stone-800 dark:hover:text-stone-200"
+            className="rounded-full p-1.5 text-stone-400 hover:bg-stone-200/60 hover:text-stone-700 dark:hover:bg-stone-800 dark:hover:text-stone-200 transition-colors cursor-pointer"
+            aria-label="Close"
+            title="Close (Esc)"
           >
             <X className="h-4 w-4" />
           </button>

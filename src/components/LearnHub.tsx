@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useApp } from '../context/AppContext';
 import { IELTSBand } from '../types';
 import {
@@ -12,6 +12,7 @@ import {
   Zap,
   Bot,
   Award,
+  X,
 } from 'lucide-react';
 import { PracticeGeneratorModal } from './PracticeGeneratorModal';
 
@@ -35,15 +36,45 @@ export const LearnHub: React.FC = () => {
   const isPracticeMode = currentTab === 'practice';
   const activeBandInfo = BANDS.find((b) => b.level === selectedBand) || BANDS[5];
 
+  // ESC key listener to close Learn or modal
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        if (showGenerator) {
+          setShowGenerator(false);
+        } else {
+          setCurrentTab('home');
+        }
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [showGenerator, setCurrentTab]);
+
   return (
     <div className="mx-auto max-w-5xl space-y-10 pb-24 text-[#111318] bg-white">
       {/* 15 & 16. EDITORIAL HEADER */}
-      <div className="border-b border-stone-200/80 pb-6">
-        <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
+      <div className="relative border-b border-stone-200/80 pb-6">
+        {/* Top Header Row with Category and Close (X) Button */}
+        <div className="flex items-center justify-between pb-2">
+          <span className="text-[11px] font-bold uppercase tracking-widest text-indigo-600">
+            {isPracticeMode ? 'SKILL LAUNCHPAD' : 'CONTENT LIBRARY'}
+          </span>
+
+          <button
+            id="btn-close-learn"
+            data-testid="close-learn"
+            onClick={() => setCurrentTab('home')}
+            className="flex h-9 w-9 items-center justify-center rounded-xl border border-stone-200 bg-white text-[#5C616B] hover:text-[#111318] hover:bg-stone-100 active:scale-95 transition-all shadow-2xs cursor-pointer z-30 shrink-0"
+            aria-label="Close"
+            title="Close (Esc)"
+          >
+            <X className="h-4 w-4" />
+          </button>
+        </div>
+
+        <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 mt-1">
           <div className="space-y-2">
-            <span className="text-[11px] font-bold uppercase tracking-widest text-indigo-600">
-              {isPracticeMode ? 'SKILL LAUNCHPAD' : 'CONTENT LIBRARY'}
-            </span>
             <h1 className="text-4xl sm:text-5xl font-black tracking-tight text-[#111318] uppercase leading-[1.05]">
               {isPracticeMode ? 'PRACTICE' : 'LEARN'}
             </h1>
@@ -54,7 +85,7 @@ export const LearnHub: React.FC = () => {
             </p>
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
             <button
               onClick={() => setCurrentTab(isPracticeMode ? 'learn' : 'practice')}
               className="rounded-xl border border-stone-200 bg-white px-4 py-2.5 text-xs font-semibold text-[#111318] hover:bg-stone-50 transition-colors cursor-pointer"
@@ -427,7 +458,9 @@ export const LearnHub: React.FC = () => {
       )}
 
       {/* Practice Generator Modal */}
-      <PracticeGeneratorModal isOpen={showGenerator} onClose={() => setShowGenerator(false)} />
+      {showGenerator && (
+        <PracticeGeneratorModal isOpen={showGenerator} onClose={() => setShowGenerator(false)} />
+      )}
     </div>
   );
 };
