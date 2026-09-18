@@ -247,28 +247,46 @@ export const SpeakingModule: React.FC = () => {
               </button>
             </div>
 
-            <div className="mt-6 border-t border-stone-100 pt-6 dark:border-stone-800">
-              <div className="flex flex-col items-center gap-2.5">
-                <button
-                  onClick={toggleRecording}
-                  className={`flex h-14 w-14 items-center justify-center rounded-full shadow-sm transition-transform hover:scale-105 active:scale-95 ${
+            {/* Minimalist Recording Interface */}
+            <div className="flex flex-col items-center justify-center py-4 space-y-4">
+              {/* Clean Geometric Circle ◯ */}
+              <div className="relative flex h-24 w-24 items-center justify-center">
+                {isRecording && (
+                  <div className="absolute inset-0 rounded-full border border-indigo-400 animate-ping opacity-30" />
+                )}
+                <div
+                  className={`flex h-20 w-20 items-center justify-center rounded-full border transition-all duration-300 ${
                     isRecording
-                      ? 'bg-amber-600 text-white ring-4 ring-amber-100 dark:ring-amber-950'
-                      : 'bg-stone-900 text-white hover:bg-stone-800 dark:bg-stone-100 dark:text-stone-900 dark:hover:bg-white'
+                      ? 'border-indigo-600 bg-white text-indigo-600 shadow-sm'
+                      : 'border-stone-200/90 bg-white text-[#111111] dark:border-stone-800 dark:bg-stone-900 dark:text-white'
                   }`}
-                  aria-label={isRecording ? 'Stop Recording' : 'Start Recording'}
                 >
-                  {isRecording ? <MicOff className="h-6 w-6" /> : <Mic className="h-6 w-6" />}
-                </button>
-
-                <p className="text-xs font-medium text-stone-700 dark:text-stone-300">
-                  {isRecording ? 'Listening to speech...' : 'Click to Speak'}
-                </p>
-
-                <div className="font-mono text-[11px] text-stone-400">
-                  Recorded: {formatTimer(speakingSeconds)}
+                  <span className="text-3xl font-light">◯</span>
                 </div>
               </div>
+
+              {/* Timer: 00:42 */}
+              <div className="text-center">
+                <span className="font-mono text-2xl font-bold tracking-tight text-[#111111] dark:text-white">
+                  {formatTimer(speakingSeconds)}
+                </span>
+                <p className="mt-0.5 text-xs text-[#777777] dark:text-stone-400">
+                  {isRecording ? 'Recording in progress...' : 'Ready to record'}
+                </p>
+              </div>
+
+              {/* Action Button: [ Stop recording ] / [ Start recording ] */}
+              <button
+                onClick={toggleRecording}
+                className={`inline-flex items-center justify-center gap-2 rounded-xl px-6 py-3 text-xs font-semibold shadow-2xs transition-all active:scale-98 ${
+                  isRecording
+                    ? 'bg-[#111111] text-white hover:bg-[#222222] dark:bg-white dark:text-[#111111]'
+                    : 'bg-[#111111] text-white hover:bg-[#222222] dark:bg-white dark:text-[#111111]'
+                }`}
+              >
+                {isRecording ? <MicOff className="h-4 w-4" /> : <Mic className="h-4 w-4" />}
+                <span>{isRecording ? 'Stop recording' : 'Start speaking'}</span>
+              </button>
             </div>
           </div>
         </div>

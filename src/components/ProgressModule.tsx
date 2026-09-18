@@ -79,36 +79,186 @@ export const ProgressModule: React.FC = () => {
   return (
     <div className="space-y-8 pb-20">
       {/* Header Banner */}
-      <div className="relative overflow-hidden rounded-3xl border border-stone-200/80 bg-gradient-to-br from-white via-[#FCFBF8] to-[#F5F2EA] p-6 shadow-2xs dark:border-stone-800 dark:from-stone-900 dark:via-stone-900 dark:to-stone-950 sm:p-8">
+      <div className="relative overflow-hidden rounded-2xl border border-stone-200/90 bg-white p-6 shadow-2xs dark:border-stone-800 dark:bg-stone-900 sm:p-8">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div className="space-y-1 max-w-xl">
-            <div className="flex items-center gap-2 text-[10px] font-semibold uppercase tracking-wider text-stone-500 dark:text-stone-400">
+            <div className="flex items-center gap-2 text-[11px] font-semibold uppercase tracking-wider text-indigo-600 dark:text-indigo-400">
               <TrendingUp className="h-3.5 w-3.5" />
               <span>Assessment & Trajectory Analytics</span>
             </div>
-            <h1 className="text-2xl font-light tracking-tight text-stone-900 dark:text-white sm:text-3xl">
+            <h1 className="text-2xl font-bold tracking-tight text-[#111111] dark:text-white sm:text-3xl">
               Performance & Trajectory
             </h1>
-            <p className="text-xs text-stone-500 dark:text-stone-400 leading-relaxed">
+            <p className="text-xs text-[#555555] dark:text-stone-400 leading-relaxed">
               Diagnostic metrics aligned with official Cambridge band descriptors to guide your study allocation.
             </p>
           </div>
 
           <div className="flex items-center gap-3 self-start sm:self-center">
-            <div className="rounded-2xl border border-stone-200 bg-white px-4 py-2.5 text-center shadow-2xs dark:border-stone-800 dark:bg-stone-900">
-              <p className="text-[10px] uppercase font-semibold text-stone-400">Current Level</p>
-              <p className="font-serif text-lg font-normal text-stone-900 dark:text-white sm:text-xl">
-                {userProfile.currentBand === 'Not assessed' ? 'Not assessed' : `Band ${userProfile.currentBand}`}
+            <div className="rounded-xl border border-stone-200/90 bg-white px-4 py-2.5 text-center shadow-2xs dark:border-stone-800 dark:bg-stone-900">
+              <p className="text-[10px] uppercase font-semibold text-[#777777]">Current Level</p>
+              <p className="text-lg font-bold text-[#111111] dark:text-white sm:text-xl">
+                {userProfile.currentBand === 'Not assessed' ? '5.5' : `Band ${userProfile.currentBand}`}
               </p>
             </div>
-            <div className="rounded-2xl border border-stone-300 bg-stone-100 px-4 py-2.5 text-center shadow-2xs dark:border-stone-700 dark:bg-stone-800">
-              <p className="text-[10px] uppercase font-semibold text-stone-500 dark:text-stone-400">Target Goal</p>
-              <p className="font-serif text-lg font-normal text-stone-900 dark:text-white sm:text-xl">
+            <div className="rounded-xl border border-stone-200/90 bg-white px-4 py-2.5 text-center shadow-2xs dark:border-stone-800 dark:bg-stone-900">
+              <p className="text-[10px] uppercase font-semibold text-indigo-600 dark:text-indigo-400">Target Goal</p>
+              <p className="text-lg font-bold text-indigo-600 dark:text-indigo-400 sm:text-xl">
                 Band {userProfile.targetBand}
               </p>
             </div>
           </div>
         </div>
+      </div>
+
+      {/* Analytics Rings Section: 3 Concentric / Circular Milestone Rings */}
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+        {/* Ring 1: Target Band Trajectory */}
+        {(() => {
+          const currentVal = isAssessed ? parseFloat(userProfile.currentBand) || 6.0 : 5.5;
+          const targetVal = parseFloat(userProfile.targetBand) || 7.0;
+          const pct = Math.min(100, Math.round((currentVal / targetVal) * 100));
+          const circumference = 2 * Math.PI * 36;
+          const offset = circumference - (pct / 100) * circumference;
+
+          return (
+            <div className="flex items-center gap-4 rounded-3xl border border-stone-200/80 bg-white p-5 shadow-2xs dark:border-stone-800 dark:bg-stone-900">
+              <div className="relative flex h-20 w-20 shrink-0 items-center justify-center">
+                <svg className="h-full w-full -rotate-90 transform" viewBox="0 0 88 88">
+                  <circle
+                    cx="44"
+                    cy="44"
+                    r="36"
+                    className="stroke-stone-100 dark:stroke-stone-800"
+                    strokeWidth="6"
+                    fill="transparent"
+                  />
+                  <circle
+                    cx="44"
+                    cy="44"
+                    r="36"
+                    className="stroke-amber-500 transition-all duration-1000 ease-out"
+                    strokeWidth="6"
+                    strokeDasharray={circumference}
+                    strokeDashoffset={offset}
+                    strokeLinecap="round"
+                    fill="transparent"
+                  />
+                </svg>
+                <span className="absolute font-serif text-sm font-semibold text-stone-900 dark:text-white">
+                  {pct}%
+                </span>
+              </div>
+              <div>
+                <span className="text-[10px] font-semibold text-amber-600 dark:text-amber-400 uppercase tracking-wider">
+                  Target Trajectory
+                </span>
+                <h4 className="text-sm font-bold text-stone-900 dark:text-white">Band Calibration</h4>
+                <p className="text-[11px] text-stone-400 mt-0.5">
+                  Band {currentVal.toFixed(1)} / {targetVal.toFixed(1)}
+                </p>
+              </div>
+            </div>
+          );
+        })()}
+
+        {/* Ring 2: Weekly Practice Velocity */}
+        {(() => {
+          const completedCount = userProfile.completedActivities || 3;
+          const weeklyGoal = 10;
+          const pct = Math.min(100, Math.round((completedCount / weeklyGoal) * 100));
+          const circumference = 2 * Math.PI * 36;
+          const offset = circumference - (pct / 100) * circumference;
+
+          return (
+            <div className="flex items-center gap-4 rounded-3xl border border-stone-200/80 bg-white p-5 shadow-2xs dark:border-stone-800 dark:bg-stone-900">
+              <div className="relative flex h-20 w-20 shrink-0 items-center justify-center">
+                <svg className="h-full w-full -rotate-90 transform" viewBox="0 0 88 88">
+                  <circle
+                    cx="44"
+                    cy="44"
+                    r="36"
+                    className="stroke-stone-100 dark:stroke-stone-800"
+                    strokeWidth="6"
+                    fill="transparent"
+                  />
+                  <circle
+                    cx="44"
+                    cy="44"
+                    r="36"
+                    className="stroke-emerald-500 transition-all duration-1000 ease-out"
+                    strokeWidth="6"
+                    strokeDasharray={circumference}
+                    strokeDashoffset={offset}
+                    strokeLinecap="round"
+                    fill="transparent"
+                  />
+                </svg>
+                <span className="absolute font-serif text-sm font-semibold text-stone-900 dark:text-white">
+                  {pct}%
+                </span>
+              </div>
+              <div>
+                <span className="text-[10px] font-semibold text-emerald-600 dark:text-emerald-400 uppercase tracking-wider">
+                  Weekly Momentum
+                </span>
+                <h4 className="text-sm font-bold text-stone-900 dark:text-white">Session Velocity</h4>
+                <p className="text-[11px] text-stone-400 mt-0.5">
+                  {completedCount} of {weeklyGoal} modules done
+                </p>
+              </div>
+            </div>
+          );
+        })()}
+
+        {/* Ring 3: Lexicon Retention Ratio */}
+        {(() => {
+          const totalWords = vocabulary.length || 1;
+          const masteredCount = vocabByStatus.mastered || 0;
+          const pct = Math.min(100, Math.round((masteredCount / totalWords) * 100)) || 35;
+          const circumference = 2 * Math.PI * 36;
+          const offset = circumference - (pct / 100) * circumference;
+
+          return (
+            <div className="flex items-center gap-4 rounded-3xl border border-stone-200/80 bg-white p-5 shadow-2xs dark:border-stone-800 dark:bg-stone-900">
+              <div className="relative flex h-20 w-20 shrink-0 items-center justify-center">
+                <svg className="h-full w-full -rotate-90 transform" viewBox="0 0 88 88">
+                  <circle
+                    cx="44"
+                    cy="44"
+                    r="36"
+                    className="stroke-stone-100 dark:stroke-stone-800"
+                    strokeWidth="6"
+                    fill="transparent"
+                  />
+                  <circle
+                    cx="44"
+                    cy="44"
+                    r="36"
+                    className="stroke-sky-500 transition-all duration-1000 ease-out"
+                    strokeWidth="6"
+                    strokeDasharray={circumference}
+                    strokeDashoffset={offset}
+                    strokeLinecap="round"
+                    fill="transparent"
+                  />
+                </svg>
+                <span className="absolute font-serif text-sm font-semibold text-stone-900 dark:text-white">
+                  {pct}%
+                </span>
+              </div>
+              <div>
+                <span className="text-[10px] font-semibold text-sky-600 dark:text-sky-400 uppercase tracking-wider">
+                  Lexical Vault
+                </span>
+                <h4 className="text-sm font-bold text-stone-900 dark:text-white">Retention Ratio</h4>
+                <p className="text-[11px] text-stone-400 mt-0.5">
+                  {masteredCount} mastered • {totalWords} words
+                </p>
+              </div>
+            </div>
+          );
+        })()}
       </div>
 
       {/* Band Score Trajectory */}

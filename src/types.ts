@@ -170,3 +170,27 @@ export interface GeneratedExercise {
   explanation: string;
   ieltsTip: string;
 }
+
+export type NovaState = 'idle' | 'listening' | 'thinking' | 'speaking' | 'success' | 'error';
+
+export interface VocabularyTopic {
+  id: string;
+  name: string;
+  nameVi: string;
+  level: string;
+  icon: string;
+  description: string;
+  words: VocabularyItem[];
+}
+
+export interface GrammarTopic {
+  id: string;
+  title: string;
+  titleVi: string;
+  bandTarget: string;
+  category: string;
+  explanation: string;
+  formula: string;
+  examples: { standard: string; band8: string; note: string }[];
+  commonMistakes: { wrong: string; correct: string; reason: string }[];
+}

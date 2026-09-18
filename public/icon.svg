@@ -1,0 +1,44 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" fill="none">
+  <defs>
+    <radialGradient id="novaGlow" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#FFF2D6" />
+      <stop offset="25%" stop-color="#F5B544" />
+      <stop offset="55%" stop-color="#DE7C18" />
+      <stop offset="85%" stop-color="#6E320A" />
+      <stop offset="100%" stop-color="#121318" />
+    </radialGradient>
+    <radialGradient id="coreLight" cx="45%" cy="40%" r="40%">
+      <stop offset="0%" stop-color="#FFFFFF" />
+      <stop offset="60%" stop-color="#FFDE99" />
+      <stop offset="100%" stop-color="#F5A623" />
+    </radialGradient>
+    <filter id="blurFilter" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur stdDeviation="12" />
+    </filter>
+  </defs>
+
+  <!-- Deep dark luxury background with subtle rounded squircle -->
+  <rect width="512" height="512" rx="128" fill="#121318" />
+
+  <!-- Outer Ambient Glow -->
+  <circle cx="256" cy="256" r="160" fill="url(#novaGlow)" opacity="0.6" filter="url(#blurFilter)" />
+
+  <!-- Orbital Stardust Rings -->
+  <ellipse cx="256" cy="256" rx="190" ry="80" stroke="#FFD285" stroke-width="1.5" stroke-dasharray="8 12" opacity="0.35" transform="rotate(-25 256 256)" />
+  <ellipse cx="256" cy="256" rx="180" ry="110" stroke="#FFE9BE" stroke-width="1.2" opacity="0.25" transform="rotate(35 256 256)" />
+
+  <!-- Luminous Nova Sphere -->
+  <circle cx="256" cy="256" r="105" fill="url(#coreLight)" />
+
+  <!-- Inner Refraction Layer -->
+  <circle cx="240" cy="235" r="85" fill="#FFFFFF" opacity="0.45" filter="url(#blurFilter)" />
+
+  <!-- Signature Central 4-point Diamond Sparkle -->
+  <path d="M256 160 L266 246 L352 256 L266 266 L256 352 L246 266 L160 256 L246 246 Z" fill="#FFFFFF" opacity="0.95" />
+  <circle cx="256" cy="256" r="6" fill="#FFF9ED" />
+
+  <!-- Satellite Micro Particle Sparkles -->
+  <circle cx="165" cy="180" r="3.5" fill="#FFECC2" opacity="0.8" />
+  <circle cx="360" cy="320" r="4.5" fill="#FFC966" opacity="0.75" />
+  <circle cx="340" cy="170" r="2.5" fill="#FFFFFF" opacity="0.85" />
+</svg>

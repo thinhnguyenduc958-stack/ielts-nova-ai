@@ -7,17 +7,16 @@ import {
   BookOpen,
   PenTool,
   Mic,
-  ScanText,
-  Languages,
   Bookmark,
   Bot,
   TrendingUp,
   User,
-  Sparkles,
-  Sun,
-  Moon,
-  Laptop,
+  Zap,
+  Download,
+  Languages,
+  ScanText,
 } from 'lucide-react';
+import { NovaLogo } from './NovaLogo';
 
 interface SidebarProps {
   mobileOpen: boolean;
@@ -36,41 +35,43 @@ interface NavSection {
 
 const NAV_SECTIONS: NavSection[] = [
   {
-    title: 'Sanctuary',
+    title: 'Overview',
     items: [
-      { id: 'home', label: 'Overview', icon: Compass },
+      { id: 'home', label: 'Home', icon: Compass },
       { id: 'learn', label: 'Study Hub', icon: GraduationCap },
     ],
   },
   {
     title: 'Core Skills',
     items: [
-      { id: 'listening', label: 'Listening', icon: Headphones, badge: 'Audio' },
-      { id: 'reading', label: 'Reading', icon: BookOpen, badge: 'Lexicon' },
+      { id: 'speaking', label: 'Speaking Lab', icon: Mic, badge: 'AI' },
       { id: 'writing', label: 'Writing Studio', icon: PenTool, badge: 'Rubric' },
-      { id: 'speaking', label: 'Speaking Lab', icon: Mic, badge: 'Coach' },
+      { id: 'reading', label: 'Reading Drills', icon: BookOpen },
+      { id: 'listening', label: 'Listening Lab', icon: Headphones },
     ],
   },
   {
-    title: 'Intelligence & Vault',
+    title: 'Vocabulary & Tools',
     items: [
       { id: 'vocabulary', label: 'Lexicon Vault', icon: Bookmark },
-      { id: 'scan', label: 'Smart Scan', icon: ScanText, badge: 'OCR' },
-      { id: 'translator', label: 'Verified Translator', icon: Languages, badge: 'IELTS' },
-      { id: 'tutor', label: 'AI Tutor', icon: Bot, badge: 'Nova' },
+      { id: 'grammar', label: 'Grammar Master', icon: Zap, badge: 'Band 8+' },
+      { id: 'tutor', label: 'AI Tutor', icon: Bot, badge: 'NOVA' },
+      { id: 'translator', label: 'Translator', icon: Languages },
+      { id: 'scan', label: 'Smart Scan', icon: ScanText },
     ],
   },
   {
-    title: 'Journey',
+    title: 'Performance & App',
     items: [
-      { id: 'progress', label: 'Band Progression', icon: TrendingUp },
-      { id: 'profile', label: 'Preferences', icon: User },
+      { id: 'progress', label: 'Progress & Analytics', icon: TrendingUp },
+      { id: 'download', label: 'Download Center', icon: Download },
+      { id: 'profile', label: 'Settings', icon: User },
     ],
   },
 ];
 
 export const Sidebar: React.FC<SidebarProps> = ({ mobileOpen, setMobileOpen }) => {
-  const { currentTab, setCurrentTab, vocabulary, userProfile, theme, setTheme } = useApp();
+  const { currentTab, setCurrentTab, vocabulary, userProfile } = useApp();
 
   const handleSelectTab = (tab: AppTab) => {
     setCurrentTab(tab);
@@ -78,33 +79,18 @@ export const Sidebar: React.FC<SidebarProps> = ({ mobileOpen, setMobileOpen }) =
   };
 
   const navContent = (
-    <div className="flex h-full flex-col justify-between overflow-y-auto px-3.5 py-6">
+    <div className="flex h-full flex-col justify-between overflow-y-auto px-3 py-6 bg-white dark:bg-[#111215]">
       <div className="space-y-6">
         {/* Mobile Header in Drawer */}
-        <div className="flex items-center gap-3 px-2 md:hidden">
-          <div className="flex h-9 w-9 items-center justify-center rounded-2xl bg-stone-900 text-amber-200 shadow-sm dark:bg-stone-100 dark:text-stone-900">
-            <Sparkles className="h-4 w-4" />
-          </div>
-          <div>
-            <div className="flex items-center gap-1.5">
-              <span className="text-sm font-bold tracking-tight text-stone-900 dark:text-stone-100">
-                IELTS Nova
-              </span>
-              <span className="rounded-full bg-stone-200/70 px-1.5 py-0.5 text-[9px] font-semibold text-stone-700 dark:bg-stone-800 dark:text-stone-300">
-                Studio
-              </span>
-            </div>
-            <p className="text-[10px] text-stone-500 dark:text-stone-400">
-              Cambridge Learning Studio
-            </p>
-          </div>
+        <div className="px-2 md:hidden">
+          <NovaLogo size="md" />
         </div>
 
-        {/* Grouped Navigation Sections */}
+        {/* Grouped Navigation */}
         <div className="space-y-5">
           {NAV_SECTIONS.map((sec) => (
             <div key={sec.title}>
-              <p className="mb-1.5 px-3 text-[10px] font-medium tracking-wider text-stone-400 dark:text-stone-500 uppercase">
+              <p className="mb-1.5 px-3 text-[10px] font-semibold tracking-wider text-[#777777] uppercase dark:text-stone-500">
                 {sec.title}
               </p>
               <nav className="space-y-0.5">
@@ -117,21 +103,21 @@ export const Sidebar: React.FC<SidebarProps> = ({ mobileOpen, setMobileOpen }) =
                     <button
                       key={item.id}
                       onClick={() => handleSelectTab(item.id)}
-                      className={`group flex w-full items-center justify-between rounded-2xl px-3 py-2 text-xs font-medium transition-all duration-200 ${
+                      className={`group relative flex w-full items-center justify-between rounded-xl px-3 py-2 text-xs font-medium transition-all ${
                         isActive
-                          ? 'bg-stone-900 text-stone-50 shadow-2xs dark:bg-stone-100 dark:text-stone-900 font-semibold'
-                          : 'text-stone-700 hover:bg-stone-200/40 hover:text-stone-950 dark:text-stone-300 dark:hover:bg-stone-800/60 dark:hover:text-stone-100'
+                          ? 'bg-[#111111] text-white font-semibold shadow-2xs dark:bg-white dark:text-[#111111]'
+                          : 'text-[#555555] hover:bg-stone-50 hover:text-[#111111] dark:text-stone-400 dark:hover:bg-stone-850 dark:hover:text-stone-100'
                       }`}
                     >
                       <div className="flex items-center gap-2.5">
                         <Icon
                           className={`h-4 w-4 transition-colors ${
                             isActive
-                              ? 'text-amber-300 dark:text-stone-900'
-                              : 'text-stone-400 group-hover:text-stone-700 dark:text-stone-500 dark:group-hover:text-stone-300'
+                              ? 'text-white dark:text-[#111111]'
+                              : 'text-[#777777] group-hover:text-[#111111] dark:text-stone-500 dark:group-hover:text-stone-300'
                           }`}
                         />
-                        <span className="tracking-tight">{item.label}</span>
+                        <span>{item.label}</span>
                       </div>
 
                       <div className="flex items-center gap-1.5">
@@ -139,8 +125,8 @@ export const Sidebar: React.FC<SidebarProps> = ({ mobileOpen, setMobileOpen }) =
                           <span
                             className={`rounded-full px-2 py-0.5 text-[10px] font-medium ${
                               isActive
-                                ? 'bg-stone-800 text-amber-200 dark:bg-stone-200 dark:text-stone-800'
-                                : 'bg-stone-100 text-stone-600 dark:bg-stone-800 dark:text-stone-400'
+                                ? 'bg-stone-800 text-stone-200 dark:bg-stone-200 dark:text-stone-800'
+                                : 'bg-stone-100 text-[#555555] dark:bg-stone-800 dark:text-stone-400'
                             }`}
                           >
                             {vocabCount}
@@ -152,7 +138,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ mobileOpen, setMobileOpen }) =
                             className={`rounded-full px-1.5 py-0.5 text-[9px] font-medium ${
                               isActive
                                 ? 'bg-stone-800 text-stone-300 dark:bg-stone-200 dark:text-stone-700'
-                                : 'bg-stone-200/60 text-stone-600 dark:bg-stone-800/80 dark:text-stone-400'
+                                : 'bg-stone-100 text-[#777777] dark:bg-stone-800 dark:text-stone-400'
                             }`}
                           >
                             {item.badge}
@@ -168,76 +154,20 @@ export const Sidebar: React.FC<SidebarProps> = ({ mobileOpen, setMobileOpen }) =
         </div>
       </div>
 
-      {/* Bottom Area: Target Track & Mode Toggles */}
-      <div className="mt-6 space-y-3 pt-4 border-t border-stone-200/60 dark:border-stone-800/60">
-        {/* Soft Target Track Card */}
-        <div className="rounded-2xl border border-stone-200/70 bg-white/70 p-3.5 shadow-2xs dark:border-stone-800 dark:bg-stone-900/60">
+      {/* Trajectory Footnote */}
+      <div className="mt-6 pt-4 border-t border-stone-200/80 dark:border-stone-800">
+        <div className="rounded-xl border border-stone-200/90 bg-white p-3 shadow-2xs dark:border-stone-800 dark:bg-stone-900">
           <div className="flex items-center justify-between text-xs">
-            <span className="font-semibold text-stone-800 dark:text-stone-200">
+            <span className="font-semibold text-[#111111] dark:text-stone-200">
               Trajectory
             </span>
-            <span className="rounded-full bg-stone-100 px-2 py-0.5 text-[10px] font-bold text-stone-800 dark:bg-stone-800 dark:text-stone-200">
+            <span className="text-[11px] font-bold text-indigo-600 dark:text-indigo-400">
               Goal {userProfile.targetBand}
             </span>
           </div>
-          <p className="mt-1 text-[11px] text-stone-500 dark:text-stone-400">
-            Current:{' '}
-            <span className="font-medium text-stone-800 dark:text-stone-200">
-              {userProfile.currentBand === 'Not assessed' ? 'Diagnostic pending' : `Band ${userProfile.currentBand}`}
-            </span>
+          <p className="mt-0.5 text-[11px] text-[#777777] dark:text-stone-400">
+            Current Band {userProfile.currentBand === 'Not assessed' ? '5.5' : userProfile.currentBand}
           </p>
-          <div className="mt-2.5 h-1.5 w-full overflow-hidden rounded-full bg-stone-100 dark:bg-stone-800">
-            <div
-              className="h-full rounded-full bg-stone-800 dark:bg-amber-300 transition-all duration-500"
-              style={{
-                width: `${
-                  userProfile.currentBand === 'Not assessed'
-                    ? 10
-                    : Math.min(100, Math.round((parseFloat(userProfile.currentBand) / parseFloat(userProfile.targetBand)) * 100))
-                }%`,
-              }}
-            />
-          </div>
-        </div>
-
-        {/* Minimalist Theme Segment */}
-        <div className="flex items-center justify-between rounded-full border border-stone-200/70 bg-white/60 p-1 text-xs dark:border-stone-800 dark:bg-stone-900/60">
-          <button
-            onClick={() => setTheme('light')}
-            className={`flex flex-1 items-center justify-center gap-1 rounded-full py-1 transition-all ${
-              theme === 'light'
-                ? 'bg-stone-900 font-semibold text-stone-50 shadow-2xs dark:bg-stone-100 dark:text-stone-900'
-                : 'text-stone-500 hover:text-stone-800 dark:text-stone-400 dark:hover:text-stone-200'
-            }`}
-            title="Light Theme"
-          >
-            <Sun className="h-3 w-3" />
-            <span className="text-[10px]">Light</span>
-          </button>
-          <button
-            onClick={() => setTheme('dark')}
-            className={`flex flex-1 items-center justify-center gap-1 rounded-full py-1 transition-all ${
-              theme === 'dark'
-                ? 'bg-stone-900 font-semibold text-stone-50 shadow-2xs dark:bg-stone-100 dark:text-stone-900'
-                : 'text-stone-500 hover:text-stone-800 dark:text-stone-400 dark:hover:text-stone-200'
-            }`}
-            title="Dark Theme"
-          >
-            <Moon className="h-3 w-3" />
-            <span className="text-[10px]">Dark</span>
-          </button>
-          <button
-            onClick={() => setTheme('system')}
-            className={`flex flex-1 items-center justify-center gap-1 rounded-full py-1 transition-all ${
-              theme === 'system'
-                ? 'bg-stone-900 font-semibold text-stone-50 shadow-2xs dark:bg-stone-100 dark:text-stone-900'
-                : 'text-stone-500 hover:text-stone-800 dark:text-stone-400 dark:hover:text-stone-200'
-            }`}
-            title="Auto Theme"
-          >
-            <Laptop className="h-3 w-3" />
-            <span className="text-[10px]">Auto</span>
-          </button>
         </div>
       </div>
     </div>
@@ -245,8 +175,8 @@ export const Sidebar: React.FC<SidebarProps> = ({ mobileOpen, setMobileOpen }) =
 
   return (
     <>
-      {/* Desktop Inset Sidebar */}
-      <aside className="hidden w-60 shrink-0 border-r border-stone-200/60 bg-[#FAF9F5]/70 dark:border-stone-800/60 dark:bg-[#131417]/70 md:flex flex-col sticky top-16 h-[calc(100vh-4rem)] z-30">
+      {/* Desktop Inset Clean White Sidebar */}
+      <aside className="hidden w-60 shrink-0 border-r border-stone-200/80 bg-white dark:border-stone-800 dark:bg-[#111215] md:flex flex-col sticky top-16 h-[calc(100vh-4rem)] z-30">
         {navContent}
       </aside>
 
@@ -254,10 +184,10 @@ export const Sidebar: React.FC<SidebarProps> = ({ mobileOpen, setMobileOpen }) =
       {mobileOpen && (
         <div className="fixed inset-0 z-50 flex md:hidden">
           <div
-            className="fixed inset-0 bg-stone-950/40 backdrop-blur-xs transition-opacity duration-300"
+            className="fixed inset-0 bg-black/40 backdrop-blur-xs transition-opacity"
             onClick={() => setMobileOpen(false)}
           />
-          <div className="relative flex w-4/5 max-w-xs flex-1 flex-col bg-[#FAF9F5] shadow-2xl dark:bg-[#131417] animate-in slide-in-from-left duration-200">
+          <div className="relative flex w-4/5 max-w-xs flex-1 flex-col bg-white shadow-xl dark:bg-[#111215] animate-in slide-in-from-left duration-200">
             {navContent}
           </div>
         </div>

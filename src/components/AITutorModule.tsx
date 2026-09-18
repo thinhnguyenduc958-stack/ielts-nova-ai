@@ -280,64 +280,65 @@ export const AITutorModule: React.FC = () => {
 
                 <div className="max-w-[85%] sm:max-w-[78%] space-y-2">
                   <div
-                    className={`rounded-2xl p-4.5 text-xs sm:text-sm leading-relaxed ${
+                    className={`rounded-2xl p-4 text-xs sm:text-sm leading-relaxed ${
                       isUser
-                        ? 'bg-stone-900 text-white font-medium dark:bg-stone-100 dark:text-stone-900'
-                        : 'border border-stone-100 bg-[#FAF9F5] text-stone-800 dark:border-stone-800 dark:bg-stone-850 dark:text-stone-200 font-serif'
+                        ? 'bg-[#F5F5F5] text-[#111111] font-normal dark:bg-stone-800 dark:text-white'
+                        : 'border border-stone-200/80 bg-white text-[#111111] shadow-2xs dark:border-stone-800 dark:bg-stone-900 dark:text-stone-100'
                     }`}
                   >
                     {!isUser && personaObj && (
-                      <div className="mb-2 flex items-center justify-between border-b border-stone-200/60 pb-1.5 dark:border-stone-750 font-sans">
-                        <span className="text-[10px] font-semibold uppercase tracking-wider text-stone-400">
+                      <div className="mb-2 flex items-center justify-between border-b border-stone-100 pb-1.5 dark:border-stone-800 font-sans">
+                        <span className="text-[10px] font-semibold tracking-wider text-indigo-600 dark:text-indigo-400">
                           {personaObj.name}
                         </span>
-                        <span className="text-[10px] text-stone-400">{msg.timestamp}</span>
+                        <span className="text-[10px] text-[#777777] dark:text-stone-500">{msg.timestamp}</span>
                       </div>
                     )}
 
-                    <div className="whitespace-pre-wrap leading-relaxed">{msg.content}</div>
+                    <div className="whitespace-pre-wrap leading-relaxed text-[#111111] dark:text-stone-100">{msg.content}</div>
 
                     {!isUser && (
-                      <div className="mt-3 flex items-center justify-between border-t border-stone-200/60 pt-2 text-[11px] text-stone-400 dark:border-stone-750 font-sans">
+                      <div className="mt-3 flex items-center justify-between border-t border-stone-100 pt-2 text-[11px] text-[#777777] dark:border-stone-800 font-sans">
                         <button
                           onClick={() =>
                             apiService.speakText(msg.content.replace(/[*_#]/g, ''), 'UK')
                           }
-                          className="flex items-center gap-1 font-medium hover:text-stone-800 dark:hover:text-stone-200"
+                          className="flex items-center gap-1.5 font-medium hover:text-[#111111] dark:hover:text-stone-200 transition-colors"
                         >
-                          <Volume2 className="h-3 w-3" />
-                          <span>Listen Tutor Audio</span>
+                          <Volume2 className="h-3.5 w-3.5 text-indigo-600 dark:text-indigo-400" />
+                          <span>Listen audio</span>
                         </button>
                       </div>
                     )}
                   </div>
 
                   {msg.corrections && (
-                    <div className="overflow-hidden rounded-2xl border border-stone-200 bg-[#FCFBF8] text-xs dark:border-stone-800 dark:bg-stone-850">
+                    <div className="overflow-hidden rounded-2xl border border-stone-200/90 bg-white text-xs dark:border-stone-800 dark:bg-stone-900">
                       <button
                         onClick={() => toggleCorrection(msg.id)}
-                        className="flex w-full items-center justify-between p-3 text-left font-medium text-stone-800 dark:text-stone-200"
+                        className="flex w-full items-center justify-between p-3 text-left font-medium text-[#111111] dark:text-stone-200"
                       >
                         <span className="flex items-center gap-1.5">
-                          <Sparkles className="h-3.5 w-3.5 text-amber-600" />
-                          Surgical Grammar & Lexicon Upgrade
+                          <Sparkles className="h-3.5 w-3.5 text-indigo-600 dark:text-indigo-400" />
+                          <span>Surgical Upgrade & Recommendation</span>
                         </span>
                         {expandedCorrections[msg.id] ? (
-                          <ChevronUp className="h-3.5 w-3.5" />
+                          <ChevronUp className="h-3.5 w-3.5 text-[#777777]" />
                         ) : (
-                          <ChevronDown className="h-3.5 w-3.5" />
+                          <ChevronDown className="h-3.5 w-3.5 text-[#777777]" />
                         )}
                       </button>
-
                       {expandedCorrections[msg.id] && (
-                        <div className="space-y-1.5 border-t border-stone-200/70 p-3 pt-2 text-stone-700 dark:border-stone-800 dark:text-stone-300">
-                          <p>
-                            <span className="text-stone-400">Original:</span> "{msg.corrections.original}"
-                          </p>
-                          <p className="font-medium text-stone-900 dark:text-white">
-                            <span className="text-stone-400">Band 8.0+:</span> "{msg.corrections.improved}"
-                          </p>
-                          <p className="text-[11px] text-stone-400 italic">
+                        <div className="border-t border-stone-100 bg-stone-50/50 p-3 space-y-2 dark:border-stone-800 dark:bg-stone-950/40">
+                          <div>
+                            <span className="text-[10px] font-semibold uppercase tracking-wider text-rose-500">Original:</span>
+                            <p className="mt-0.5 text-xs text-[#555555] line-through dark:text-stone-400">{msg.corrections.original}</p>
+                          </div>
+                          <div>
+                            <span className="text-[10px] font-semibold uppercase tracking-wider text-emerald-600">Band 8+ Equivalent:</span>
+                            <p className="mt-0.5 text-xs font-semibold text-[#111111] dark:text-white">{msg.corrections.improved}</p>
+                          </div>
+                          <p className="text-[11px] text-[#777777] italic">
                             {msg.corrections.explanation}
                           </p>
                         </div>
@@ -360,7 +361,7 @@ export const AITutorModule: React.FC = () => {
         </div>
 
         {/* Input Bar */}
-        <div className="border-t border-stone-100 p-4 dark:border-stone-800">
+        <div className="border-t border-stone-100 p-3.5 sm:p-4 bg-white dark:border-stone-800 dark:bg-stone-900">
           <form
             onSubmit={(e) => {
               e.preventDefault();
@@ -375,12 +376,12 @@ export const AITutorModule: React.FC = () => {
               placeholder={`Ask ${
                 PERSONAS.find((p) => p.id === activePersona)?.name
               } about IELTS target Band ${userProfile.targetBand}...`}
-              className="flex-1 rounded-full border border-stone-200 bg-[#FAF9F5] px-5 py-3 text-xs sm:text-sm text-stone-900 focus:border-stone-400 focus:bg-white focus:outline-hidden dark:border-stone-700 dark:bg-stone-800 dark:text-stone-100"
+              className="flex-1 rounded-xl border border-stone-200/90 bg-white px-4 py-2.5 text-xs sm:text-sm text-[#111111] placeholder:text-[#777777] focus:border-indigo-600 focus:outline-hidden dark:border-stone-800 dark:bg-stone-900 dark:text-stone-100"
             />
             <button
               type="submit"
               disabled={loading || !inputText.trim()}
-              className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-stone-900 text-white shadow-sm hover:bg-stone-800 disabled:opacity-40 dark:bg-stone-100 dark:text-stone-900 dark:hover:bg-white"
+              className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#111111] text-white shadow-2xs hover:bg-[#222222] disabled:opacity-30 dark:bg-white dark:text-[#111111] transition-all"
             >
               <Send className="h-4 w-4" />
             </button>

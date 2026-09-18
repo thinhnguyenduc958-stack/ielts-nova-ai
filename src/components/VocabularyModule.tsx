@@ -3,6 +3,8 @@ import { useApp } from '../context/AppContext';
 import { apiService } from '../services/apiService';
 import { VocabularyItem } from '../types';
 import { systemIELTSVocabulary } from '../data/mockIELTSData';
+import { initialVocabularyTopics, ieltsTopicsRegistry } from '../data/vocabularyTopics';
+import { VocabularyTopic } from '../types';
 import {
   Bookmark,
   Plus,
@@ -20,6 +22,8 @@ import {
   Brain,
   Sliders,
   Check,
+  Compass,
+  FolderOpen,
 } from 'lucide-react';
 
 export const VocabularyModule: React.FC = () => {
@@ -28,9 +32,14 @@ export const VocabularyModule: React.FC = () => {
   const [activeDeck, setActiveDeck] = useState<'personal' | 'system'>(
     vocabulary.length > 0 ? 'personal' : 'system'
   );
-  const [activeView, setActiveView] = useState<'inspect' | 'list' | 'flashcards' | 'quiz'>('inspect');
+  const [activeView, setActiveView] = useState<'inspect' | 'list' | 'topics' | 'flashcards' | 'quiz'>('inspect');
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<'all' | 'new' | 'learning' | 'review' | 'mastered'>('all');
+  
+  // Topics Database State
+  const [selectedTopicId, setSelectedTopicId] = useState<string>('education');
+  const [topicCategoryFilter, setTopicCategoryFilter] = useState<string>('all');
+  const [topicSearch, setTopicSearch] = useState<string>('');
 
   const activeVocabularyList = activeDeck === 'personal' ? vocabulary : systemIELTSVocabulary;
 
@@ -185,6 +194,16 @@ export const VocabularyModule: React.FC = () => {
                 }`}
               >
                 All Words
+              </button>
+              <button
+                onClick={() => setActiveView('topics')}
+                className={`rounded-full px-3 py-1.5 transition-all ${
+                  activeView === 'topics'
+                    ? 'bg-stone-900 text-white shadow-2xs font-semibold dark:bg-stone-100 dark:text-stone-900'
+                    : 'text-stone-600 hover:text-stone-900 dark:text-stone-300'
+                }`}
+              >
+                Topics (200+)
               </button>
               <button
                 onClick={() => {
@@ -572,6 +591,237 @@ export const VocabularyModule: React.FC = () => {
           )}
         </div>
       )}
+
+      {/* VIEW: 200+ IELTS TOPICS REGISTRY */}
+      {activeView === 'topics' && (() => {
+        const categories = ['all', 'Academic', 'Science', 'Nature', 'Society', 'Economy', 'Culture', 'Urban'];
+        
+        const filteredTopics = ieltsTopicsRegistry.filter((t) => {
+          const matchCat = topicCategoryFilter === 'all' || t.category.toLowerCase() === topicCategoryFilter.toLowerCase();
+          const matchSearch =
+            !topicSearch ||
+            t.name.toLowerCase().includes(topicSearch.toLowerCase()) ||
+            t.category.toLowerCase().includes(topicSearch.toLowerCase());
+          return matchCat && matchSearch;
+        });
+
+        const currentTopicData =
+          initialVocabularyTopics.find((t) => t.id === selectedTopicId) ||
+          initialVocabularyTopics[0];
+
+        return (
+          <div className="space-y-6">
+            {/* Topic Filter & Search Bar */}
+            <div className="flex flex-col gap-3 rounded-2xl border border-stone-200/80 bg-white p-4 shadow-2xs dark:border-stone-800 dark:bg-stone-900 sm:flex-row sm:items-center sm:justify-between">
+              {/* Category Pills */}
+              <div className="flex flex-wrap items-center gap-1.5 overflow-x-auto pb-1 sm:pb-0">
+                {categories.map((cat) => (
+                  <button
+                    key={cat}
+                    onClick={() => setTopicCategoryFilter(cat)}
+                    className={`rounded-full px-3 py-1 text-xs font-semibold capitalize transition-all ${
+                      topicCategoryFilter === cat
+                        ? 'bg-amber-500 text-stone-950 font-bold shadow-2xs'
+                        : 'bg-stone-100 text-stone-600 hover:bg-stone-200 dark:bg-stone-800 dark:text-stone-300'
+                    }`}
+                  >
+                    {cat}
+                  </button>
+                ))}
+              </div>
+
+              {/* Search input */}
+              <div className="relative min-w-[220px]">
+                <Search className="absolute left-3 top-2.5 h-3.5 w-3.5 text-stone-400" />
+                <input
+                  type="text"
+                  value={topicSearch}
+                  onChange={(e) => setTopicSearch(e.target.value)}
+                  placeholder="Tìm topic (VD: Environment, AI)..."
+                  className="w-full rounded-full border border-stone-200 bg-stone-50 pl-8 pr-3 py-1.5 text-xs text-stone-900 focus:border-amber-500 focus:bg-white focus:outline-hidden dark:border-stone-700 dark:bg-stone-800 dark:text-stone-100"
+                />
+              </div>
+            </div>
+
+            {/* Layout: Topics List (Left) + Selected Topic Lexicon Detail (Right) */}
+            <div className="grid grid-cols-1 gap-6 lg:grid-cols-12">
+              {/* Topics Grid Selector */}
+              <div className="lg:col-span-4 space-y-2 max-h-[640px] overflow-y-auto pr-1">
+                <div className="text-[11px] font-semibold text-stone-400 uppercase tracking-wider px-1">
+                  Topics ({filteredTopics.length} / 200+ topics)
+                </div>
+                <div className="grid grid-cols-1 gap-2">
+                  {filteredTopics.map((top) => {
+                    const isSelected = selectedTopicId === top.id;
+                    const hasDeepWords = initialVocabularyTopics.some((t) => t.id === top.id);
+
+                    return (
+                      <div
+                        key={top.id}
+                        onClick={() => setSelectedTopicId(top.id)}
+                        className={`cursor-pointer rounded-2xl border p-3.5 transition-all text-left ${
+                          isSelected
+                            ? 'border-amber-400 bg-amber-50/40 shadow-xs dark:border-amber-400/50 dark:bg-amber-950/20'
+                            : 'border-stone-200/80 bg-white hover:border-stone-300 dark:border-stone-800 dark:bg-stone-900'
+                        }`}
+                      >
+                        <div className="flex items-center justify-between">
+                          <span className="text-xs font-bold text-stone-900 dark:text-stone-100">
+                            {top.name}
+                          </span>
+                          <span className="rounded-full bg-stone-100 px-2 py-0.5 text-[9px] font-semibold text-stone-600 dark:bg-stone-800 dark:text-stone-300">
+                            {top.nameVi || 'Band 7.5+'}
+                          </span>
+                        </div>
+                        <div className="mt-1 flex items-center justify-between text-[10px] text-stone-400">
+                          <span>{top.category}</span>
+                          {hasDeepWords ? (
+                            <span className="font-semibold text-amber-600 dark:text-amber-400">Curated Lexicon</span>
+                          ) : (
+                            <span>Core Topic</span>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Selected Topic Deep Words Showcase */}
+              <div className="lg:col-span-8 space-y-4">
+                <div className="rounded-3xl border border-stone-200/80 bg-white p-6 shadow-2xs dark:border-stone-800 dark:bg-stone-900">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-stone-100 pb-4 dark:border-stone-800">
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <span className="rounded-full bg-amber-500/10 px-2.5 py-0.5 text-[10px] font-bold text-amber-600 dark:text-amber-400">
+                          {currentTopicData.level} Lexicon
+                        </span>
+                        <span className="text-xs text-stone-400">• {currentTopicData.words.length} Academic Words</span>
+                      </div>
+                      <h2 className="text-2xl font-serif font-semibold text-stone-900 dark:text-stone-100 mt-1">
+                        {currentTopicData.name}
+                      </h2>
+                    </div>
+
+                    <div className="flex items-center gap-2">
+                      <button
+                        onClick={() => {
+                          currentTopicData.words.forEach((w) => {
+                            if (!vocabulary.some((v) => v.word.toLowerCase() === w.word.toLowerCase())) {
+                              addVocabulary({
+                                word: w.word,
+                                meaning: w.meaning,
+                                ipa: w.ipa,
+                                partOfSpeech: w.partOfSpeech,
+                                exampleSentence: w.exampleSentence,
+                                collocations: w.collocations,
+                                status: 'new',
+                              });
+                            }
+                          });
+                          showToast(`Added all words from "${currentTopicData.name}" to My Vault!`);
+                        }}
+                        className="rounded-full bg-stone-900 px-3.5 py-1.5 text-xs font-semibold text-white hover:bg-stone-800 dark:bg-amber-400 dark:text-stone-950 transition-all"
+                      >
+                        + Add All to Vault
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Word Cards List for this Topic */}
+                  <div className="mt-6 space-y-4">
+                    {currentTopicData.words.map((w, idx) => {
+                      const alreadyInVault = vocabulary.some(
+                        (v) => v.word.toLowerCase() === w.word.toLowerCase()
+                      );
+
+                      return (
+                        <div
+                          key={idx}
+                          className="rounded-2xl border border-stone-100 bg-[#FCFBF9] p-4.5 transition-all hover:border-amber-300 dark:border-stone-800 dark:bg-stone-850"
+                        >
+                          <div className="flex flex-col sm:flex-row sm:items-baseline justify-between gap-2">
+                            <div className="flex items-center gap-3">
+                              <h3 className="text-lg font-bold text-stone-900 dark:text-white">
+                                {w.word}
+                              </h3>
+                              <span className="font-mono text-xs text-stone-400">{w.ipa}</span>
+                              <span className="rounded-md bg-stone-200/60 px-2 py-0.5 text-[10px] font-semibold text-stone-700 dark:bg-stone-800 dark:text-stone-300">
+                                {w.partOfSpeech}
+                              </span>
+                              <button
+                                onClick={() => {
+                                  apiService.speakText(w.word);
+                                  showToast(`Playing audio for "${w.word}"...`);
+                                }}
+                                className="rounded-full p-1 text-stone-400 hover:text-stone-700 dark:hover:text-stone-200"
+                              >
+                                <Volume2 className="h-4 w-4" />
+                              </button>
+                            </div>
+
+                            <div className="flex items-center gap-2">
+                              {!alreadyInVault ? (
+                                <button
+                                  onClick={() => {
+                                    addVocabulary({
+                                      word: w.word,
+                                      meaning: w.meaning,
+                                      ipa: w.ipa,
+                                      partOfSpeech: w.partOfSpeech,
+                                      exampleSentence: w.exampleSentence,
+                                      collocations: w.collocations,
+                                      status: 'learning',
+                                    });
+                                    showToast(`Saved "${w.word}" to Personal Vault!`);
+                                  }}
+                                  className="flex items-center gap-1 rounded-full border border-stone-200 bg-white px-2.5 py-1 text-[11px] font-semibold text-stone-700 hover:bg-stone-50 dark:border-stone-700 dark:bg-stone-800 dark:text-stone-200"
+                                >
+                                  <Bookmark className="h-3 w-3" />
+                                  <span>Save</span>
+                                </button>
+                              ) : (
+                                <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-emerald-600 dark:text-emerald-400">
+                                  <CheckCircle2 className="h-3.5 w-3.5" />
+                                  <span>Saved</span>
+                                </span>
+                              )}
+                            </div>
+                          </div>
+
+                          <div className="mt-2 text-xs font-semibold text-stone-800 dark:text-stone-200">
+                            {w.meaning}
+                          </div>
+
+                          <div className="mt-2 rounded-xl bg-white p-3 border border-stone-100 text-xs italic text-stone-600 dark:bg-stone-900 dark:border-stone-800 dark:text-stone-300 font-serif">
+                            "{w.exampleSentence}"
+                          </div>
+
+                          {w.collocations && w.collocations.length > 0 && (
+                            <div className="mt-3 flex flex-wrap items-center gap-1.5">
+                              <span className="text-[10px] font-semibold text-stone-400 uppercase">
+                                Collocations:
+                              </span>
+                              {w.collocations.map((col, ci) => (
+                                <span
+                                  key={ci}
+                                  className="rounded-full bg-amber-500/10 px-2 py-0.5 text-[10px] font-semibold text-amber-700 dark:text-amber-300"
+                                >
+                                  {col}
+                                </span>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        );
+      })()}
 
       {/* VIEW 3: FLASHCARDS MODE */}
       {activeView === 'flashcards' && (

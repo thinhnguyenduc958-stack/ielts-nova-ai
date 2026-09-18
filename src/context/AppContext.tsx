@@ -5,16 +5,22 @@ import { initialUserProfile, sampleVocabulary } from '../data/mockIELTSData';
 export type AppTab =
   | 'home'
   | 'learn'
+  | 'practice'
   | 'listening'
   | 'reading'
   | 'writing'
   | 'speaking'
   | 'scan'
+  | 'smart-scan'
   | 'translator'
+  | 'translate'
   | 'vocabulary'
+  | 'grammar'
   | 'tutor'
+  | 'nova'
   | 'progress'
-  | 'profile';
+  | 'profile'
+  | 'download';
 
 export interface ActivityItem {
   id: string;
@@ -70,7 +76,7 @@ const AppContext = createContext<AppContextType | undefined>(undefined);
 export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [currentTab, setCurrentTab] = useState<AppTab>('home');
 
-  // Theme state
+  // Theme state: default strictly to clean light mode
   const [theme, setThemeState] = useState<AppTheme>(() => {
     try {
       const saved = localStorage.getItem('ielts_nova_theme') as AppTheme;
@@ -78,7 +84,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         return saved;
       }
     } catch {}
-    return 'system';
+    return 'light';
   });
 
   const [systemPrefersDark, setSystemPrefersDark] = useState<boolean>(() => {

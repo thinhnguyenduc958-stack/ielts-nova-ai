@@ -287,78 +287,81 @@ export const WritingModule: React.FC = () => {
       {/* Evaluation Results */}
       {evaluation && (
         <div className="space-y-6 rounded-3xl border border-stone-200/80 bg-gradient-to-br from-[#FCFBF8] via-white to-[#F5F2EA] p-7 shadow-2xs dark:border-stone-800 dark:from-stone-900 dark:via-stone-900 dark:to-stone-950 sm:p-8 animate-in fade-in duration-300">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-stone-100 pb-5 dark:border-stone-800">
-            <div>
-              <span className="text-[10px] font-semibold uppercase tracking-wider text-stone-400">
-                Official Rubric Assessment
-              </span>
-              <h3 className="text-xl font-light text-stone-900 dark:text-white sm:text-2xl">
-                Examiner Score Breakdown
-              </h3>
-            </div>
-
-            <div className="flex items-center gap-3">
-              <div className="rounded-2xl bg-stone-900 px-5 py-3 text-center text-white dark:bg-stone-100 dark:text-stone-900">
-                <p className="text-[10px] font-medium tracking-wider uppercase opacity-75">Estimated Band</p>
-                <p className="text-3xl font-light">{evaluation.overallBand.toFixed(1)}</p>
+          <div className="border-b border-stone-200/80 pb-4 dark:border-stone-800">
+            <span className="text-xs font-semibold uppercase tracking-wider text-indigo-600 dark:text-indigo-400">
+              Writing Evaluation Report
+            </span>
+            <div className="mt-2 flex items-baseline justify-between">
+              <div>
+                <span className="text-xs font-semibold text-[#777777] uppercase">Overall Band</span>
+                <div className="mt-0.5 text-4xl font-bold tracking-tight text-[#111111] dark:text-white">
+                  {evaluation.overallBand.toFixed(1)}
+                </div>
               </div>
+              <span className="text-xs text-[#555555] dark:text-stone-400">
+                Calibrated Range: {evaluation.bandRange}
+              </span>
             </div>
           </div>
 
-          {/* 4 Criteria Grid */}
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            <div className="rounded-2xl border border-stone-200/80 bg-white p-5 shadow-2xs dark:border-stone-800 dark:bg-stone-850">
-              <div className="flex items-center justify-between">
-                <h4 className="text-xs font-semibold text-stone-800 dark:text-stone-200">
+          {/* Criteria Breakdown: Editorial Lines */}
+          <div className="space-y-6 pt-2">
+            {/* Task Response */}
+            <div className="space-y-1.5 border-b border-stone-200/80 pb-4 dark:border-stone-800">
+              <div className="flex items-baseline justify-between">
+                <h4 className="text-xs font-bold text-[#111111] uppercase tracking-wide dark:text-white">
                   Task Response
                 </h4>
-                <span className="rounded-full bg-stone-100 px-2 py-0.5 text-xs font-semibold text-stone-800 dark:bg-stone-800 dark:text-stone-200">
+                <span className="text-xs font-bold text-indigo-600 dark:text-indigo-400">
                   Band {evaluation.criteria.taskResponse.band.toFixed(1)}
                 </span>
               </div>
-              <p className="mt-2 text-xs text-stone-600 dark:text-stone-300 leading-relaxed">
+              <p className="text-xs leading-relaxed text-[#555555] dark:text-stone-300">
                 {evaluation.criteria.taskResponse.feedback}
               </p>
             </div>
 
-            <div className="rounded-2xl border border-stone-200/80 bg-white p-5 shadow-2xs dark:border-stone-800 dark:bg-stone-850">
-              <div className="flex items-center justify-between">
-                <h4 className="text-xs font-semibold text-stone-800 dark:text-stone-200">
+            {/* Coherence & Cohesion */}
+            <div className="space-y-1.5 border-b border-stone-200/80 pb-4 dark:border-stone-800">
+              <div className="flex items-baseline justify-between">
+                <h4 className="text-xs font-bold text-[#111111] uppercase tracking-wide dark:text-white">
                   Coherence & Cohesion
                 </h4>
-                <span className="rounded-full bg-stone-100 px-2 py-0.5 text-xs font-semibold text-stone-800 dark:bg-stone-800 dark:text-stone-200">
+                <span className="text-xs font-bold text-indigo-600 dark:text-indigo-400">
                   Band {evaluation.criteria.coherenceCohesion.band.toFixed(1)}
                 </span>
               </div>
-              <p className="mt-2 text-xs text-stone-600 dark:text-stone-300 leading-relaxed">
+              <p className="text-xs leading-relaxed text-[#555555] dark:text-stone-300">
                 {evaluation.criteria.coherenceCohesion.feedback}
               </p>
             </div>
 
-            <div className="rounded-2xl border border-stone-200/80 bg-white p-5 shadow-2xs dark:border-stone-800 dark:bg-stone-850">
-              <div className="flex items-center justify-between">
-                <h4 className="text-xs font-semibold text-stone-800 dark:text-stone-200">
+            {/* Lexical Resource */}
+            <div className="space-y-1.5 border-b border-stone-200/80 pb-4 dark:border-stone-800">
+              <div className="flex items-baseline justify-between">
+                <h4 className="text-xs font-bold text-[#111111] uppercase tracking-wide dark:text-white">
                   Lexical Resource
                 </h4>
-                <span className="rounded-full bg-stone-100 px-2 py-0.5 text-xs font-semibold text-stone-800 dark:bg-stone-800 dark:text-stone-200">
+                <span className="text-xs font-bold text-indigo-600 dark:text-indigo-400">
                   Band {evaluation.criteria.lexicalResource.band.toFixed(1)}
                 </span>
               </div>
-              <p className="mt-2 text-xs text-stone-600 dark:text-stone-300 leading-relaxed">
+              <p className="text-xs leading-relaxed text-[#555555] dark:text-stone-300">
                 {evaluation.criteria.lexicalResource.feedback}
               </p>
             </div>
 
-            <div className="rounded-2xl border border-stone-200/80 bg-white p-5 shadow-2xs dark:border-stone-800 dark:bg-stone-850">
-              <div className="flex items-center justify-between">
-                <h4 className="text-xs font-semibold text-stone-800 dark:text-stone-200">
-                  Grammar Range
+            {/* Grammatical Accuracy */}
+            <div className="space-y-1.5 border-b border-stone-200/80 pb-4 dark:border-stone-800">
+              <div className="flex items-baseline justify-between">
+                <h4 className="text-xs font-bold text-[#111111] uppercase tracking-wide dark:text-white">
+                  Grammatical Accuracy
                 </h4>
-                <span className="rounded-full bg-stone-100 px-2 py-0.5 text-xs font-semibold text-stone-800 dark:bg-stone-800 dark:text-stone-200">
+                <span className="text-xs font-bold text-indigo-600 dark:text-indigo-400">
                   Band {evaluation.criteria.grammaticalRange.band.toFixed(1)}
                 </span>
               </div>
-              <p className="mt-2 text-xs text-stone-600 dark:text-stone-300 leading-relaxed">
+              <p className="text-xs leading-relaxed text-[#555555] dark:text-stone-300">
                 {evaluation.criteria.grammaticalRange.feedback}
               </p>
             </div>
