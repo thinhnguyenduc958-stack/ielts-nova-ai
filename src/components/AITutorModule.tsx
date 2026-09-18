@@ -1,8 +1,10 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useApp } from '../context/AppContext';
 import { apiService } from '../services/apiService';
+import { NovaSymbol } from './NovaLogo';
+import { NovaOrb } from './NovaOrb';
+import { NovaVoiceDialog } from './NovaVoiceDialog';
 import {
-  Bot,
   Sparkles,
   Send,
   Loader2,
@@ -15,6 +17,7 @@ import {
   GraduationCap,
   ChevronDown,
   ChevronUp,
+  Mic,
 } from 'lucide-react';
 
 type TutorPersona = 'examiner' | 'study_buddy' | 'grammar_doctor' | 'vocab_coach';
@@ -81,7 +84,7 @@ const getInitialGreeting = (targetBand: string): ChatMessage[] => [
     id: 'welcome',
     role: 'assistant',
     persona: 'examiner',
-    content: `Hello. I am your Cambridge-aligned **IELTS Mentor**, tailored to your goal of **Band ${targetBand}**. Which question, prompt, or linguistic structure would you like to review today?`,
+    content: `Hello! I am your Cambridge-aligned **NOVA AI IELTS Mentor**, calibrated to your goal of **Band ${targetBand}**. Which question, prompt, or linguistic structure would you like to master today?`,
     timestamp: 'Just now',
   },
 ];
@@ -89,12 +92,15 @@ const getInitialGreeting = (targetBand: string): ChatMessage[] => [
 export const AITutorModule: React.FC = () => {
   const { userProfile, showToast } = useApp();
 
-  const [messages, setMessages] = useState<ChatMessage[]>(() => getInitialGreeting(userProfile.targetBand));
+  const [messages, setMessages] = useState<ChatMessage[]>(() =>
+    getInitialGreeting(userProfile.targetBand)
+  );
   const [inputText, setInputText] = useState('');
   const [loading, setLoading] = useState(false);
   const [activePersona, setActivePersona] = useState<TutorPersona>('examiner');
   const [langPreference, setLangPreference] = useState<'bilingual' | 'english' | 'vietnamese'>('bilingual');
   const [expandedCorrections, setExpandedCorrections] = useState<Record<string, boolean>>({});
+  const [isVoiceOpen, setIsVoiceOpen] = useState(false);
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
@@ -160,47 +166,55 @@ export const AITutorModule: React.FC = () => {
   };
 
   return (
-    <div className="space-y-6 pb-20">
-      {/* Header Banner */}
-      <div className="relative overflow-hidden rounded-3xl border border-stone-200/80 bg-gradient-to-br from-white via-[#FCFBF8] to-[#F5F2EA] p-6 shadow-2xs dark:border-stone-800 dark:from-stone-900 dark:via-stone-900 dark:to-stone-950 sm:p-8">
-        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-          <div className="space-y-1 max-w-xl">
-            <div className="flex items-center gap-2 text-[10px] font-semibold uppercase tracking-wider text-stone-500 dark:text-stone-400">
-              <Bot className="h-3.5 w-3.5" />
-              <span>Mentor Studio • Cambridge Rubric Calibrated</span>
-            </div>
-            <h1 className="text-2xl font-light tracking-tight text-stone-900 dark:text-white sm:text-3xl">
-              AI Tutor & Study Companion
+    <div className="mx-auto max-w-4xl space-y-6 pb-24 text-[#111318] dark:text-[#F3F4F6]">
+      {/* SECTION 22: ELEGANT CONVERSATIONAL HEADER */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-stone-200/80 pb-5 dark:border-stone-800">
+        <div className="flex items-center gap-3.5">
+          <NovaOrb size="sm" state={loading ? 'thinking' : 'idle'} />
+          <div>
+            <span className="text-[10px] font-bold uppercase tracking-widest text-indigo-600 dark:text-indigo-400 block">
+              CONVERSATIONAL INTELLIGENCE
+            </span>
+            <h1 className="text-2xl sm:text-3xl font-black tracking-tight text-[#111318] dark:text-white uppercase">
+              NOVA AI Tutor
             </h1>
-            <p className="text-xs text-stone-500 dark:text-stone-400 leading-relaxed">
-              Select your persona mode: official examiner rubric breakdown, friendly coaching, or surgical grammar precision.
-            </p>
           </div>
+        </div>
 
-          <div className="flex items-center gap-2 self-start sm:self-center">
-            <select
-              value={langPreference}
-              onChange={(e) => setLangPreference(e.target.value as any)}
-              className="rounded-full border border-stone-200 bg-white px-3 py-1.5 text-xs font-medium text-stone-700 focus:outline-hidden dark:border-stone-700 dark:bg-stone-800 dark:text-stone-200"
-            >
-              <option value="bilingual">Bilingual (EN + VI)</option>
-              <option value="english">English Only</option>
-              <option value="vietnamese">Tiếng Việt</option>
-            </select>
+        <div className="flex items-center gap-2 self-start sm:self-auto">
+          {/* Instant Voice Option */}
+          <button
+            onClick={() => setIsVoiceOpen(true)}
+            className="flex items-center gap-1.5 rounded-xl border border-indigo-200 bg-indigo-50/70 px-3 py-1.5 text-xs font-bold text-indigo-700 hover:bg-indigo-100 transition-colors dark:border-indigo-900 dark:bg-indigo-950 dark:text-indigo-300"
+          >
+            <Mic className="h-3.5 w-3.5" />
+            <span>Voice Mode</span>
+          </button>
 
-            <button
-              onClick={handleResetChat}
-              className="rounded-full border border-stone-200 bg-white p-2 text-stone-500 hover:bg-stone-50 dark:border-stone-700 dark:bg-stone-800 dark:text-stone-400"
-              title="Reset Chat"
-            >
-              <RotateCcw className="h-3.5 w-3.5" />
-            </button>
-          </div>
+          <select
+            value={langPreference}
+            onChange={(e) => setLangPreference(e.target.value as any)}
+            className="rounded-xl border border-stone-200 bg-white px-3 py-1.5 text-xs font-semibold text-[#111318] focus:outline-hidden dark:border-stone-800 dark:bg-stone-900 dark:text-stone-200"
+            aria-label="Language Mode"
+          >
+            <option value="bilingual">Bilingual (EN + VI)</option>
+            <option value="english">English Only</option>
+            <option value="vietnamese">Tiếng Việt</option>
+          </select>
+
+          <button
+            onClick={handleResetChat}
+            className="flex h-8 w-8 items-center justify-center rounded-xl border border-stone-200 bg-white text-[#5F6368] hover:text-[#111318] hover:bg-stone-50 dark:border-stone-800 dark:bg-stone-900 dark:text-stone-400 dark:hover:text-white transition-colors"
+            title="Reset Chat"
+            aria-label="Reset Chat"
+          >
+            <RotateCcw className="h-3.5 w-3.5" />
+          </button>
         </div>
       </div>
 
-      {/* Tutor Persona Selector */}
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+      {/* Persona Selection Pills */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
         {PERSONAS.map((p) => {
           const Icon = p.icon;
           const isSelected = activePersona === p.id;
@@ -209,136 +223,142 @@ export const AITutorModule: React.FC = () => {
             <button
               key={p.id}
               onClick={() => setActivePersona(p.id)}
-              className={`flex flex-col items-start rounded-2xl border p-3.5 text-left transition-all ${
+              className={`flex items-center gap-2.5 rounded-xl border p-2.5 text-left transition-all ${
                 isSelected
-                  ? 'border-stone-900 bg-white shadow-2xs dark:border-stone-100 dark:bg-stone-850'
-                  : 'border-stone-200/70 bg-white/60 hover:bg-white dark:border-stone-800 dark:bg-stone-900/60'
+                  ? 'border-indigo-600 bg-indigo-50/50 shadow-2xs dark:border-indigo-400 dark:bg-indigo-950/40'
+                  : 'border-stone-200/80 bg-white hover:border-stone-300 dark:border-stone-800 dark:bg-stone-900'
               }`}
             >
               <div
-                className={`flex h-7 w-7 items-center justify-center rounded-xl text-xs ${
+                className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-lg ${
                   isSelected
-                    ? 'bg-stone-900 text-white dark:bg-stone-100 dark:text-stone-900'
-                    : 'bg-stone-100 text-stone-600 dark:bg-stone-800 dark:text-stone-300'
+                    ? 'bg-indigo-600 text-white'
+                    : 'bg-stone-100 text-[#5F6368] dark:bg-stone-800 dark:text-stone-400'
                 }`}
               >
                 <Icon className="h-3.5 w-3.5" />
               </div>
-              <h4
-                className={`mt-2 text-xs font-semibold ${
-                  isSelected ? 'text-stone-950 dark:text-white' : 'text-stone-700 dark:text-stone-300'
-                }`}
-              >
-                {p.name}
-              </h4>
-              <p className="mt-0.5 text-[11px] text-stone-400 dark:text-stone-500 line-clamp-1">
-                {p.desc}
-              </p>
+              <div className="overflow-hidden">
+                <h4
+                  className={`text-xs font-bold truncate ${
+                    isSelected ? 'text-indigo-600 dark:text-indigo-400' : 'text-[#111318] dark:text-white'
+                  }`}
+                >
+                  {p.name}
+                </h4>
+                <p className="text-[10px] text-[#5F6368] dark:text-stone-400 truncate">
+                  {p.desc}
+                </p>
+              </div>
             </button>
           );
         })}
       </div>
 
-      {/* Quick Action Prompts */}
+      {/* Quick Prompts */}
       <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-none">
-        {QUICK_ACTION_PROMPTS.map((prompt, idx) => (
+        {QUICK_ACTION_PROMPTS.map((p, idx) => (
           <button
             key={idx}
-            onClick={() => handleSendMessage(prompt)}
-            className="shrink-0 rounded-full border border-stone-200/70 bg-white/80 px-3.5 py-1.5 text-xs text-stone-700 transition-all hover:bg-white dark:border-stone-800 dark:bg-stone-850 dark:text-stone-300"
+            onClick={() => handleSendMessage(p)}
+            className="shrink-0 inline-flex items-center gap-1.5 rounded-full border border-stone-200 bg-white px-3 py-1 text-xs text-[#5F6368] hover:border-indigo-200 hover:text-indigo-600 dark:border-stone-800 dark:bg-stone-900 dark:text-stone-300 transition-colors"
           >
-            <span className="flex items-center gap-1.5">
-              <Lightbulb className="h-3 w-3 text-amber-600" />
-              {prompt}
-            </span>
+            <Lightbulb className="h-3 w-3 text-amber-500" />
+            <span>{p}</span>
           </button>
         ))}
       </div>
 
-      {/* Chat Canvas */}
-      <div className="flex h-[560px] flex-col rounded-3xl border border-stone-200/80 bg-white shadow-2xs dark:border-stone-800 dark:bg-stone-900">
+      {/* Large Centered Dialogue Area */}
+      <div className="flex h-[540px] flex-col rounded-2xl border border-stone-200/90 bg-white shadow-xs dark:border-stone-800 dark:bg-stone-900 overflow-hidden">
         <div className="flex-1 overflow-y-auto p-5 sm:p-6 space-y-5">
           {messages.map((msg) => {
             const isUser = msg.role === 'user';
             const personaObj = PERSONAS.find((p) => p.id === (msg.persona || 'examiner'));
-            const PersonaIcon = personaObj?.icon || Sparkles;
 
             return (
               <div
                 key={msg.id}
                 className={`flex gap-3 ${isUser ? 'flex-row-reverse' : 'flex-row'} items-start`}
               >
+                {/* Avatar */}
                 <div
-                  className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-xs font-semibold ${
+                  className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-xl text-xs font-bold ${
                     isUser
-                      ? 'bg-stone-900 text-white dark:bg-stone-100 dark:text-stone-900'
-                      : 'bg-stone-100 text-stone-800 dark:bg-stone-800 dark:text-stone-200'
+                      ? 'bg-[#111318] text-white dark:bg-white dark:text-[#111318]'
+                      : 'bg-indigo-50 text-indigo-700 dark:bg-indigo-950 dark:text-indigo-300'
                   }`}
                 >
-                  {isUser ? userProfile.name.charAt(0) : <PersonaIcon className="h-3.5 w-3.5" />}
+                  {isUser ? userProfile.name.charAt(0) : <NovaSymbol size={18} variant="indigo" />}
                 </div>
 
-                <div className="max-w-[85%] sm:max-w-[78%] space-y-2">
+                {/* Message Bubble */}
+                <div className="max-w-[85%] sm:max-w-[80%] space-y-2">
                   <div
                     className={`rounded-2xl p-4 text-xs sm:text-sm leading-relaxed ${
                       isUser
-                        ? 'bg-[#F5F5F5] text-[#111111] font-normal dark:bg-stone-800 dark:text-white'
-                        : 'border border-stone-200/80 bg-white text-[#111111] shadow-2xs dark:border-stone-800 dark:bg-stone-900 dark:text-stone-100'
+                        ? 'bg-stone-100 text-[#111318] dark:bg-stone-800 dark:text-white'
+                        : 'border border-stone-200/80 bg-white text-[#111318] shadow-2xs dark:border-stone-800 dark:bg-stone-900 dark:text-stone-100'
                     }`}
                   >
                     {!isUser && personaObj && (
-                      <div className="mb-2 flex items-center justify-between border-b border-stone-100 pb-1.5 dark:border-stone-800 font-sans">
-                        <span className="text-[10px] font-semibold tracking-wider text-indigo-600 dark:text-indigo-400">
+                      <div className="mb-2 flex items-center justify-between border-b border-stone-100 pb-1.5 dark:border-stone-800">
+                        <span className="text-[10px] font-bold uppercase tracking-wider text-indigo-600 dark:text-indigo-400">
                           {personaObj.name}
                         </span>
-                        <span className="text-[10px] text-[#777777] dark:text-stone-500">{msg.timestamp}</span>
+                        <span className="text-[10px] text-[#5F6368] dark:text-stone-500">
+                          {msg.timestamp}
+                        </span>
                       </div>
                     )}
 
-                    <div className="whitespace-pre-wrap leading-relaxed text-[#111111] dark:text-stone-100">{msg.content}</div>
+                    <div className="whitespace-pre-wrap leading-relaxed text-[#111318] dark:text-stone-100">
+                      {msg.content}
+                    </div>
 
                     {!isUser && (
-                      <div className="mt-3 flex items-center justify-between border-t border-stone-100 pt-2 text-[11px] text-[#777777] dark:border-stone-800 font-sans">
+                      <div className="mt-3 flex items-center justify-between border-t border-stone-100 pt-2 text-[11px] text-[#5F6368] dark:border-stone-800">
                         <button
                           onClick={() =>
                             apiService.speakText(msg.content.replace(/[*_#]/g, ''), 'UK')
                           }
-                          className="flex items-center gap-1.5 font-medium hover:text-[#111111] dark:hover:text-stone-200 transition-colors"
+                          className="flex items-center gap-1.5 font-semibold text-indigo-600 hover:underline dark:text-indigo-400"
                         >
-                          <Volume2 className="h-3.5 w-3.5 text-indigo-600 dark:text-indigo-400" />
+                          <Volume2 className="h-3.5 w-3.5" />
                           <span>Listen audio</span>
                         </button>
                       </div>
                     )}
                   </div>
 
+                  {/* Corrections upgrade */}
                   {msg.corrections && (
-                    <div className="overflow-hidden rounded-2xl border border-stone-200/90 bg-white text-xs dark:border-stone-800 dark:bg-stone-900">
+                    <div className="overflow-hidden rounded-xl border border-stone-200 bg-white text-xs dark:border-stone-800 dark:bg-stone-900">
                       <button
                         onClick={() => toggleCorrection(msg.id)}
-                        className="flex w-full items-center justify-between p-3 text-left font-medium text-[#111111] dark:text-stone-200"
+                        className="flex w-full items-center justify-between p-3 text-left font-bold text-[#111318] dark:text-stone-200"
                       >
                         <span className="flex items-center gap-1.5">
                           <Sparkles className="h-3.5 w-3.5 text-indigo-600 dark:text-indigo-400" />
-                          <span>Surgical Upgrade & Recommendation</span>
+                          <span>Surgical Band 8.0 Recommendation</span>
                         </span>
                         {expandedCorrections[msg.id] ? (
-                          <ChevronUp className="h-3.5 w-3.5 text-[#777777]" />
+                          <ChevronUp className="h-3.5 w-3.5 text-[#5F6368]" />
                         ) : (
-                          <ChevronDown className="h-3.5 w-3.5 text-[#777777]" />
+                          <ChevronDown className="h-3.5 w-3.5 text-[#5F6368]" />
                         )}
                       </button>
                       {expandedCorrections[msg.id] && (
-                        <div className="border-t border-stone-100 bg-stone-50/50 p-3 space-y-2 dark:border-stone-800 dark:bg-stone-950/40">
+                        <div className="border-t border-stone-100 bg-stone-50 p-3 space-y-2 dark:border-stone-800 dark:bg-stone-850">
                           <div>
-                            <span className="text-[10px] font-semibold uppercase tracking-wider text-rose-500">Original:</span>
-                            <p className="mt-0.5 text-xs text-[#555555] line-through dark:text-stone-400">{msg.corrections.original}</p>
+                            <span className="text-[10px] font-bold uppercase tracking-wider text-rose-500">Original:</span>
+                            <p className="mt-0.5 text-xs text-[#5F6368] line-through dark:text-stone-400">{msg.corrections.original}</p>
                           </div>
                           <div>
-                            <span className="text-[10px] font-semibold uppercase tracking-wider text-emerald-600">Band 8+ Equivalent:</span>
-                            <p className="mt-0.5 text-xs font-semibold text-[#111111] dark:text-white">{msg.corrections.improved}</p>
+                            <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-600">Band 8+ Equivalent:</span>
+                            <p className="mt-0.5 text-xs font-bold text-[#111318] dark:text-white">{msg.corrections.improved}</p>
                           </div>
-                          <p className="text-[11px] text-[#777777] italic">
+                          <p className="text-[11px] text-[#5F6368] italic">
                             {msg.corrections.explanation}
                           </p>
                         </div>
@@ -351,16 +371,16 @@ export const AITutorModule: React.FC = () => {
           })}
 
           {loading && (
-            <div className="flex items-center gap-2 text-xs text-stone-400">
-              <Loader2 className="h-3.5 w-3.5 animate-spin text-stone-600 dark:text-stone-400" />
-              <span>Analyzing Cambridge assessment context...</span>
+            <div className="flex items-center gap-2 text-xs text-[#5F6368] dark:text-stone-400">
+              <Loader2 className="h-3.5 w-3.5 animate-spin text-indigo-600 dark:text-indigo-400" />
+              <span>NOVA is thinking and aligning with Cambridge descriptors...</span>
             </div>
           )}
 
           <div ref={messagesEndRef} />
         </div>
 
-        {/* Input Bar */}
+        {/* Input Bar with Voice & Text options */}
         <div className="border-t border-stone-100 p-3.5 sm:p-4 bg-white dark:border-stone-800 dark:bg-stone-900">
           <form
             onSubmit={(e) => {
@@ -375,19 +395,35 @@ export const AITutorModule: React.FC = () => {
               onChange={(e) => setInputText(e.target.value)}
               placeholder={`Ask ${
                 PERSONAS.find((p) => p.id === activePersona)?.name
-              } about IELTS target Band ${userProfile.targetBand}...`}
-              className="flex-1 rounded-xl border border-stone-200/90 bg-white px-4 py-2.5 text-xs sm:text-sm text-[#111111] placeholder:text-[#777777] focus:border-indigo-600 focus:outline-hidden dark:border-stone-800 dark:bg-stone-900 dark:text-stone-100"
+              } about target Band ${userProfile.targetBand}...`}
+              className="flex-1 rounded-xl border border-stone-200/90 bg-white px-4 py-2.5 text-xs sm:text-sm text-[#111318] placeholder:text-[#5F6368] focus:border-indigo-600 focus:outline-hidden dark:border-stone-800 dark:bg-stone-900 dark:text-stone-100"
             />
+
+            {/* Instant Voice Trigger */}
+            <button
+              type="button"
+              onClick={() => setIsVoiceOpen(true)}
+              className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-stone-200 bg-white text-indigo-600 hover:bg-indigo-50 dark:border-stone-800 dark:bg-stone-900 dark:text-indigo-400 transition-colors"
+              title="Voice Mode"
+              aria-label="Voice Mode"
+            >
+              <Mic className="h-4 w-4" />
+            </button>
+
             <button
               type="submit"
               disabled={loading || !inputText.trim()}
-              className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#111111] text-white shadow-2xs hover:bg-[#222222] disabled:opacity-30 dark:bg-white dark:text-[#111111] transition-all"
+              className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-indigo-600 text-white shadow-xs hover:bg-indigo-700 disabled:opacity-30 transition-all"
+              aria-label="Send message"
             >
               <Send className="h-4 w-4" />
             </button>
           </form>
         </div>
       </div>
+
+      {/* Voice Companion Dialog */}
+      <NovaVoiceDialog isOpen={isVoiceOpen} onClose={() => setIsVoiceOpen(false)} />
     </div>
   );
 };

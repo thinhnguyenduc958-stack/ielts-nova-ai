@@ -11,12 +11,15 @@ import {
   BookOpen,
   ArrowRight,
   Sparkles,
+  CheckCircle2,
+  AlertCircle,
+  HelpCircle,
 } from 'lucide-react';
 
 const TASK_TABS = [
-  { id: 'task2', label: 'Task 2 Academic Essay', minWords: 250, time: 40, promptIdx: 0 },
-  { id: 'task1_acad', label: 'Task 1 Academic Report', minWords: 150, time: 20, promptIdx: 1 },
-  { id: 'task1_gen', label: 'Task 1 General Letter', minWords: 150, time: 20, promptIdx: 1 },
+  { id: 'task2', label: 'Task 2 Essay', minWords: 250, time: 40, promptIdx: 0 },
+  { id: 'task1_acad', label: 'Task 1 Academic', minWords: 150, time: 20, promptIdx: 1 },
+  { id: 'task1_gen', label: 'Task 1 Letter', minWords: 150, time: 20, promptIdx: 1 },
 ];
 
 export const WritingModule: React.FC = () => {
@@ -58,28 +61,29 @@ export const WritingModule: React.FC = () => {
 
   const academicKeywords = [
     'contemporary',
-    'proliferation',
-    'infrastructure',
-    'mitigate',
+    'predominantly',
     'consequently',
-    'subsequently',
-    'crucial',
-    'paramount',
-    'phenomenon',
     'furthermore',
-    'nevertheless',
-    'safeguard',
-    'revitalize',
-    'heritage',
+    'mitigate',
+    'substantial',
+    'detrimental',
+    'paramount',
+    'advocate',
+    'prevalent',
+    'ubiquitous',
+    'invariably',
+    'facilitate',
+    'delineate',
+    'paradigm',
   ];
-  const academicMatches = words.filter((w) =>
-    academicKeywords.includes(w.toLowerCase().replace(/[^a-z]/g, ''))
-  ).length;
-  const academicVocabRatio = wordCount > 0 ? Math.min(32, Math.round((academicMatches / wordCount) * 100) + 12) : 0;
+  const foundAcademicWords = academicKeywords.filter((w) =>
+    essayText.toLowerCase().includes(w)
+  );
+  const academicVocabRatio = wordCount > 0 ? Math.round((foundAcademicWords.length / wordCount) * 100) : 0;
 
   const handleEvaluate = async () => {
-    if (wordCount < 30) {
-      showToast('Please write at least 30 words before submitting for Cambridge assessment.');
+    if (wordCount < 40) {
+      showToast('Please write a more substantial draft before requesting an IELTS evaluation.');
       return;
     }
 
@@ -88,12 +92,12 @@ export const WritingModule: React.FC = () => {
       const res = await apiService.evaluateWriting(
         prompt.prompt,
         essayText,
-        prompt.taskType,
+        activeTaskTab === 'task2' ? 'Task 2' : 'Task 1',
         userProfile.targetBand
       );
       setEvaluation(res);
       recordActivity(
-        `${prompt.taskType} Essay Evaluation`,
+        `Writing ${currentTaskConfig.label}`,
         'Writing',
         `Band ${res.overallBand.toFixed(1)} (${res.bandRange})`
       );
@@ -132,317 +136,274 @@ export const WritingModule: React.FC = () => {
     return `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
   };
 
+  const wordPercentage = Math.min(100, Math.round((wordCount / currentTaskConfig.minWords) * 100));
+
   return (
-    <div className="space-y-8 pb-20">
-      {/* Header Banner */}
-      <div className="relative overflow-hidden rounded-3xl border border-stone-200/80 bg-gradient-to-br from-white via-[#FCFBF8] to-[#F5F2EA] p-6 shadow-2xs dark:border-stone-800 dark:from-stone-900 dark:via-stone-900 dark:to-stone-950 sm:p-8">
-        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-          <div className="space-y-1 max-w-xl">
-            <div className="flex items-center gap-2 text-[10px] font-semibold uppercase tracking-wider text-stone-500 dark:text-stone-400">
-              <PenTool className="h-3.5 w-3.5" />
-              <span>Writing Studio • Cambridge 4-Criteria Rubric</span>
-            </div>
-            <h1 className="text-2xl font-light tracking-tight text-stone-900 dark:text-white sm:text-3xl">
-              Academic Writing Studio
-            </h1>
-            <p className="text-xs text-stone-500 dark:text-stone-400 leading-relaxed">
-              Timed distraction-free drafting with instant scoring across Task Response, Cohesion, Lexical Resource, and Grammatical Accuracy.
-            </p>
-          </div>
+    <div className="mx-auto max-w-6xl space-y-8 pb-24 text-[#111318] dark:text-[#F3F4F6]">
+      {/* Editorial Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-stone-200/80 pb-5 dark:border-stone-800">
+        <div className="space-y-1">
+          <span className="text-[11px] font-bold uppercase tracking-widest text-indigo-600 dark:text-indigo-400">
+            ACADEMIC WRITING STUDIO
+          </span>
+          <h1 className="text-3xl sm:text-4xl font-black tracking-tight text-[#111318] dark:text-white uppercase">
+            Writing Workspace
+          </h1>
+          <p className="text-xs sm:text-sm text-[#5F6368] dark:text-stone-400">
+            High-contrast drafting with real-time word counting and Cambridge 4-criteria rubric grading.
+          </p>
+        </div>
 
-          <div className="flex flex-wrap items-center gap-1.5 rounded-full border border-stone-200 bg-white p-0.5 text-xs font-medium dark:border-stone-700 dark:bg-stone-800 self-start sm:self-center">
-            {TASK_TABS.map((tab) => (
+        {/* Task Tabs */}
+        <div className="flex items-center rounded-xl border border-stone-200 bg-white p-1 text-xs font-semibold dark:border-stone-800 dark:bg-stone-900 self-start sm:self-auto">
+          {TASK_TABS.map((tab) => (
+            <button
+              key={tab.id}
+              onClick={() => setActiveTaskTab(tab.id as any)}
+              className={`rounded-lg px-3.5 py-1.5 transition-all ${
+                activeTaskTab === tab.id
+                  ? 'bg-indigo-600 text-white shadow-xs'
+                  : 'text-[#5F6368] hover:text-[#111318] dark:text-stone-400 dark:hover:text-white'
+              }`}
+            >
+              {tab.label}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* SECTION 21: PROFESSIONAL WORKSPACE (Essay on left, NOVA Analysis on right) */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+        {/* Left Column: Essay Prompt & Writing Canvas (7 cols) */}
+        <div className="lg:col-span-7 space-y-5">
+          {/* Prompt Card */}
+          <div className="rounded-2xl border border-stone-200/90 bg-white p-6 shadow-xs dark:border-stone-800 dark:bg-stone-900 space-y-3">
+            <div className="flex items-center justify-between border-b border-stone-100 pb-3 dark:border-stone-800">
+              <span className="text-xs font-bold uppercase tracking-wider text-indigo-600 dark:text-indigo-400">
+                Official Examination Prompt
+              </span>
               <button
-                key={tab.id}
-                onClick={() => setActiveTaskTab(tab.id as any)}
-                className={`rounded-full px-3.5 py-1.5 transition-all ${
-                  activeTaskTab === tab.id
-                    ? 'bg-stone-900 text-white shadow-2xs font-semibold dark:bg-stone-100 dark:text-stone-900'
-                    : 'text-stone-600 hover:text-stone-900 dark:text-stone-300'
-                }`}
+                onClick={() => setShowModel(!showModel)}
+                className="flex items-center gap-1.5 text-xs font-semibold text-[#5F6368] hover:text-indigo-600 dark:text-stone-400 dark:hover:text-indigo-400"
               >
-                {tab.label}
+                <BookOpen className="h-3.5 w-3.5" />
+                <span>{showModel ? 'Hide Model' : 'View Band 9.0 Model'}</span>
               </button>
-            ))}
-          </div>
-        </div>
-      </div>
+            </div>
 
-      {/* Prompt Card */}
-      <div className="rounded-3xl border border-stone-200/80 bg-white p-7 shadow-2xs dark:border-stone-800 dark:bg-stone-900 lg:p-8">
-        <div className="flex flex-wrap items-center justify-between gap-3 border-b border-stone-100 pb-4 dark:border-stone-800">
-          <div className="flex items-center gap-2">
-            <span className="rounded-full bg-stone-100 px-2.5 py-0.5 text-[11px] font-semibold text-stone-800 dark:bg-stone-800 dark:text-stone-200">
-              {currentTaskConfig.label}
-            </span>
-            <span className="text-[11px] text-stone-400">Target Band {prompt.targetBand} Benchmark</span>
-          </div>
+            <p className="font-serif text-sm sm:text-base leading-relaxed text-[#111318] dark:text-stone-200 italic">
+              "{prompt.prompt}"
+            </p>
 
-          <button
-            onClick={() => setShowModel(!showModel)}
-            className="flex items-center gap-1.5 text-xs font-medium text-stone-600 hover:text-stone-900 dark:text-stone-400 dark:hover:text-stone-200"
-          >
-            <BookOpen className="h-3.5 w-3.5" />
-            <span>{showModel ? 'Hide Band 9.0 Model' : 'View Band 9.0 Model'}</span>
-          </button>
-        </div>
-
-        <p className="mt-4 text-sm font-serif italic leading-relaxed text-stone-800 dark:text-stone-200 sm:text-base">
-          "{prompt.prompt}"
-        </p>
-
-        {showModel && (
-          <div className="mt-6 rounded-2xl border border-stone-200 bg-[#FCFBF8] p-5 text-xs leading-relaxed text-stone-700 dark:border-stone-800 dark:bg-stone-850 dark:text-stone-300">
-            <span className="font-semibold text-stone-900 dark:text-stone-100 uppercase tracking-wider text-[10px]">
-              Official Band 9.0 Examiner Model Answer:
-            </span>
-            <p className="mt-2.5 whitespace-pre-wrap font-serif leading-loose">{prompt.sampleBand8Essay}</p>
-          </div>
-        )}
-      </div>
-
-      {/* Real-time Metrics Strip */}
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-        <div className="rounded-2xl border border-stone-200/80 bg-white p-4 shadow-2xs dark:border-stone-800 dark:bg-stone-900 text-center">
-          <span className="text-[10px] font-medium uppercase tracking-wider text-stone-400">Word Count</span>
-          <p className="mt-1 text-2xl font-light text-stone-900 dark:text-white">
-            {wordCount}{' '}
-            <span className="text-xs text-stone-400">/ {currentTaskConfig.minWords}</span>
-          </p>
-          <span className={`mt-1 inline-block text-[10px] font-medium ${
-            wordCount >= currentTaskConfig.minWords ? 'text-emerald-700 dark:text-emerald-400' : 'text-stone-500'
-          }`}>
-            {wordCount >= currentTaskConfig.minWords ? 'Target Met ✓' : `${currentTaskConfig.minWords - wordCount} words needed`}
-          </span>
-        </div>
-
-        <div className="rounded-2xl border border-stone-200/80 bg-white p-4 shadow-2xs dark:border-stone-800 dark:bg-stone-900 text-center">
-          <span className="text-[10px] font-medium uppercase tracking-wider text-stone-400">Paragraphs</span>
-          <p className="mt-1 text-2xl font-light text-stone-900 dark:text-white">{paragraphCount}</p>
-          <span className="mt-1 inline-block text-[10px] text-stone-500">
-            {paragraphCount >= 4 ? 'Optimal Structure' : 'Aim for 4–5 paragraphs'}
-          </span>
-        </div>
-
-        <div className="rounded-2xl border border-stone-200/80 bg-white p-4 shadow-2xs dark:border-stone-800 dark:bg-stone-900 text-center">
-          <div className="flex items-center justify-center gap-1 text-[10px] font-medium uppercase tracking-wider text-stone-400">
-            <Clock className="h-3 w-3" />
-            <span>Time Remaining</span>
-          </div>
-          <p className="mt-1 font-mono text-2xl font-light text-stone-900 dark:text-white">
-            {formatTimer(secondsRemaining)}
-          </p>
-          <button
-            onClick={() => setTimerRunning(!timerRunning)}
-            className="mt-1 text-[10px] font-semibold text-stone-700 hover:text-stone-950 dark:text-stone-300"
-          >
-            {timerRunning ? 'Pause Timer' : 'Start Exam Clock'}
-          </button>
-        </div>
-
-        <div className="rounded-2xl border border-stone-200/80 bg-white p-4 shadow-2xs dark:border-stone-800 dark:bg-stone-900 text-center">
-          <span className="text-[10px] font-medium uppercase tracking-wider text-stone-400">Academic Lexis</span>
-          <p className="mt-1 text-2xl font-light text-stone-900 dark:text-white">
-            {academicVocabRatio}%
-          </p>
-          <span className="mt-1 inline-block text-[10px] text-stone-500">
-            Lexical Range Ratio
-          </span>
-        </div>
-      </div>
-
-      {/* Drafting Canvas */}
-      <div className="rounded-3xl border border-stone-200/80 bg-white p-7 shadow-2xs dark:border-stone-800 dark:bg-stone-900 lg:p-8">
-        <div className="flex items-center justify-between border-b border-stone-100 pb-4 dark:border-stone-800">
-          <h3 className="text-xs font-semibold uppercase tracking-wider text-stone-400">
-            Candidate Response Canvas
-          </h3>
-          <span className="text-xs text-stone-400">Distraction-free environment</span>
-        </div>
-
-        <textarea
-          value={essayText}
-          onChange={(e) => setEssayText(e.target.value)}
-          rows={14}
-          placeholder="Begin drafting your response here. Use clear paragraph breaks..."
-          className="mt-6 w-full text-sm sm:text-base leading-loose text-stone-900 placeholder:text-stone-300 focus:outline-hidden dark:bg-stone-900 dark:text-stone-100 font-serif"
-        />
-
-        <div className="mt-6 flex flex-wrap items-center justify-between gap-4 border-t border-stone-100 pt-5 dark:border-stone-800">
-          <span className="text-xs text-stone-400">
-            {wordCount} words written • Auto-saved locally
-          </span>
-
-          <button
-            onClick={handleEvaluate}
-            disabled={loading}
-            className="flex items-center gap-2 rounded-full bg-stone-900 px-7 py-3 text-xs font-semibold text-white shadow-sm hover:bg-stone-800 active:scale-98 disabled:opacity-50 dark:bg-stone-100 dark:text-stone-900 dark:hover:bg-white"
-          >
-            {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
-            <span>Evaluate with Cambridge AI</span>
-          </button>
-        </div>
-      </div>
-
-      {/* Evaluation Results */}
-      {evaluation && (
-        <div className="space-y-6 rounded-3xl border border-stone-200/80 bg-gradient-to-br from-[#FCFBF8] via-white to-[#F5F2EA] p-7 shadow-2xs dark:border-stone-800 dark:from-stone-900 dark:via-stone-900 dark:to-stone-950 sm:p-8 animate-in fade-in duration-300">
-          <div className="border-b border-stone-200/80 pb-4 dark:border-stone-800">
-            <span className="text-xs font-semibold uppercase tracking-wider text-indigo-600 dark:text-indigo-400">
-              Writing Evaluation Report
-            </span>
-            <div className="mt-2 flex items-baseline justify-between">
-              <div>
-                <span className="text-xs font-semibold text-[#777777] uppercase">Overall Band</span>
-                <div className="mt-0.5 text-4xl font-bold tracking-tight text-[#111111] dark:text-white">
-                  {evaluation.overallBand.toFixed(1)}
-                </div>
+            {showModel && (
+              <div className="mt-3 rounded-xl bg-stone-50 p-4 text-xs leading-relaxed text-[#5F6368] dark:bg-stone-850 dark:text-stone-300">
+                <span className="font-bold text-[#111318] dark:text-white uppercase tracking-wider text-[10px] block mb-1">
+                  Band 9.0 Benchmark Model Essay:
+                </span>
+                <p className="whitespace-pre-wrap font-serif">{prompt.sampleBand8Essay}</p>
               </div>
-              <span className="text-xs text-[#555555] dark:text-stone-400">
-                Calibrated Range: {evaluation.bandRange}
+            )}
+          </div>
+
+          {/* Drafting Canvas */}
+          <div className="rounded-2xl border border-stone-200/90 bg-white p-6 shadow-xs dark:border-stone-800 dark:bg-stone-900 space-y-4">
+            <div className="flex items-center justify-between border-b border-stone-100 pb-3 dark:border-stone-800">
+              <span className="text-xs font-bold uppercase tracking-wider text-[#5F6368] dark:text-stone-400">
+                Candidate Response Area
+              </span>
+              <div className="flex items-center gap-2">
+                <Clock className="h-3.5 w-3.5 text-stone-400" />
+                <span className="font-mono text-xs font-bold text-[#111318] dark:text-white">
+                  {formatTimer(secondsRemaining)}
+                </span>
+                <button
+                  onClick={() => setTimerRunning(!timerRunning)}
+                  className="rounded bg-stone-100 px-2 py-0.5 text-[10px] font-bold text-stone-800 hover:bg-stone-200 dark:bg-stone-800 dark:text-stone-200"
+                >
+                  {timerRunning ? 'Pause' : 'Start Exam Clock'}
+                </button>
+              </div>
+            </div>
+
+            <textarea
+              value={essayText}
+              onChange={(e) => setEssayText(e.target.value)}
+              rows={16}
+              placeholder="Begin typing your essay response here. Structure into introduction, two body paragraphs, and conclusion..."
+              className="w-full text-sm sm:text-base leading-relaxed text-[#111318] placeholder:text-stone-300 focus:outline-hidden dark:bg-stone-900 dark:text-stone-100 font-sans resize-none"
+            />
+
+            {/* Canvas Footer */}
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-t border-stone-100 pt-4 dark:border-stone-800">
+              <div className="text-xs text-[#5F6368] dark:text-stone-400">
+                <span className="font-bold text-[#111318] dark:text-white">{wordCount}</span> of {currentTaskConfig.minWords} words required
+              </div>
+
+              <button
+                onClick={handleEvaluate}
+                disabled={loading || wordCount < 20}
+                className="flex items-center justify-center gap-2 rounded-xl bg-indigo-600 px-6 py-2.5 text-xs font-bold text-white shadow-xs hover:bg-indigo-700 disabled:opacity-50 transition-all"
+              >
+                {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
+                <span>Evaluate with Cambridge AI</span>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        {/* Right Column: NOVA Real-time Analysis & Rubric (5 cols) */}
+        <div className="lg:col-span-5 space-y-5">
+          {/* Live Metrics Pod */}
+          <div className="rounded-2xl border border-stone-200/90 bg-white p-6 shadow-xs dark:border-stone-800 dark:bg-stone-900 space-y-4">
+            <span className="text-[10px] font-bold uppercase tracking-widest text-[#5F6368] dark:text-stone-400 block">
+              LIVE WRITING METRICS
+            </span>
+
+            {/* Word Count Progress */}
+            <div className="space-y-1.5">
+              <div className="flex justify-between text-xs">
+                <span className="font-bold text-[#111318] dark:text-white">Word Count</span>
+                <span className="font-mono font-bold text-indigo-600 dark:text-indigo-400">
+                  {wordCount} / {currentTaskConfig.minWords}
+                </span>
+              </div>
+              <div className="h-2 w-full rounded-full bg-stone-100 dark:bg-stone-800 overflow-hidden">
+                <div
+                  className={`h-full rounded-full transition-all duration-300 ${
+                    wordCount >= currentTaskConfig.minWords ? 'bg-emerald-500' : 'bg-indigo-600'
+                  }`}
+                  style={{ width: `${wordPercentage}%` }}
+                />
+              </div>
+              <span className="text-[11px] text-[#5F6368] dark:text-stone-400 block">
+                {wordCount >= currentTaskConfig.minWords
+                  ? '✓ Target minimum met'
+                  : `${currentTaskConfig.minWords - wordCount} more words recommended`}
               </span>
             </div>
-          </div>
 
-          {/* Criteria Breakdown: Editorial Lines */}
-          <div className="space-y-6 pt-2">
-            {/* Task Response */}
-            <div className="space-y-1.5 border-b border-stone-200/80 pb-4 dark:border-stone-800">
-              <div className="flex items-baseline justify-between">
-                <h4 className="text-xs font-bold text-[#111111] uppercase tracking-wide dark:text-white">
-                  Task Response
-                </h4>
-                <span className="text-xs font-bold text-indigo-600 dark:text-indigo-400">
-                  Band {evaluation.criteria.taskResponse.band.toFixed(1)}
+            {/* Paragraphs & Academic Lexis */}
+            <div className="grid grid-cols-2 gap-3 pt-2">
+              <div className="rounded-xl bg-stone-50 p-3.5 dark:bg-stone-850">
+                <span className="text-[10px] font-bold uppercase tracking-wider text-[#5F6368] dark:text-stone-400">
+                  Paragraphs
+                </span>
+                <p className="mt-1 font-mono text-xl font-black text-[#111318] dark:text-white">
+                  {paragraphCount}
+                </p>
+                <span className="text-[10px] text-[#5F6368] dark:text-stone-400">
+                  {paragraphCount >= 4 ? 'Optimal 4-part structure' : 'Aim for 4–5 paragraphs'}
                 </span>
               </div>
-              <p className="text-xs leading-relaxed text-[#555555] dark:text-stone-300">
-                {evaluation.criteria.taskResponse.feedback}
-              </p>
-            </div>
 
-            {/* Coherence & Cohesion */}
-            <div className="space-y-1.5 border-b border-stone-200/80 pb-4 dark:border-stone-800">
-              <div className="flex items-baseline justify-between">
-                <h4 className="text-xs font-bold text-[#111111] uppercase tracking-wide dark:text-white">
-                  Coherence & Cohesion
-                </h4>
-                <span className="text-xs font-bold text-indigo-600 dark:text-indigo-400">
-                  Band {evaluation.criteria.coherenceCohesion.band.toFixed(1)}
+              <div className="rounded-xl bg-stone-50 p-3.5 dark:bg-stone-850">
+                <span className="text-[10px] font-bold uppercase tracking-wider text-[#5F6368] dark:text-stone-400">
+                  Academic Lexis
+                </span>
+                <p className="mt-1 font-mono text-xl font-black text-indigo-600 dark:text-indigo-400">
+                  {academicVocabRatio}%
+                </p>
+                <span className="text-[10px] text-[#5F6368] dark:text-stone-400">
+                  {foundAcademicWords.length} academic keywords
                 </span>
               </div>
-              <p className="text-xs leading-relaxed text-[#555555] dark:text-stone-300">
-                {evaluation.criteria.coherenceCohesion.feedback}
-              </p>
-            </div>
-
-            {/* Lexical Resource */}
-            <div className="space-y-1.5 border-b border-stone-200/80 pb-4 dark:border-stone-800">
-              <div className="flex items-baseline justify-between">
-                <h4 className="text-xs font-bold text-[#111111] uppercase tracking-wide dark:text-white">
-                  Lexical Resource
-                </h4>
-                <span className="text-xs font-bold text-indigo-600 dark:text-indigo-400">
-                  Band {evaluation.criteria.lexicalResource.band.toFixed(1)}
-                </span>
-              </div>
-              <p className="text-xs leading-relaxed text-[#555555] dark:text-stone-300">
-                {evaluation.criteria.lexicalResource.feedback}
-              </p>
-            </div>
-
-            {/* Grammatical Accuracy */}
-            <div className="space-y-1.5 border-b border-stone-200/80 pb-4 dark:border-stone-800">
-              <div className="flex items-baseline justify-between">
-                <h4 className="text-xs font-bold text-[#111111] uppercase tracking-wide dark:text-white">
-                  Grammatical Accuracy
-                </h4>
-                <span className="text-xs font-bold text-indigo-600 dark:text-indigo-400">
-                  Band {evaluation.criteria.grammaticalRange.band.toFixed(1)}
-                </span>
-              </div>
-              <p className="text-xs leading-relaxed text-[#555555] dark:text-stone-300">
-                {evaluation.criteria.grammaticalRange.feedback}
-              </p>
             </div>
           </div>
 
-          {/* Line-by-Line Annotations */}
-          {evaluation.sentenceImprovements && evaluation.sentenceImprovements.length > 0 && (
-            <div className="rounded-2xl border border-stone-200/80 bg-white p-6 shadow-2xs dark:border-stone-800 dark:bg-stone-850">
-              <h4 className="text-xs font-semibold uppercase tracking-wider text-stone-400 border-b border-stone-100 pb-3 dark:border-stone-800">
-                Sentence-Level Polish (Before vs. After)
-              </h4>
+          {/* Cambridge Rubric / Evaluation Results */}
+          {evaluation ? (
+            <div className="rounded-2xl border border-indigo-100 bg-white p-6 shadow-xs dark:border-stone-800 dark:bg-stone-900 space-y-4 animate-in fade-in duration-300">
+              <div className="flex items-center justify-between border-b border-stone-100 pb-3 dark:border-stone-800">
+                <div>
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-indigo-600 dark:text-indigo-400 block">
+                    CAMBRIDGE EVALUATION
+                  </span>
+                  <span className="text-xs text-[#5F6368] dark:text-stone-400">
+                    Estimated Band Score
+                  </span>
+                </div>
+                <span className="font-mono text-3xl font-black text-indigo-600 dark:text-indigo-400">
+                  Band {evaluation.overallBand.toFixed(1)}
+                </span>
+              </div>
 
-              <div className="mt-4 space-y-4">
-                {evaluation.sentenceImprovements.map((anno, idx) => (
-                  <div
-                    key={idx}
-                    className="rounded-xl border border-stone-100 bg-[#FAF9F5] p-4 dark:border-stone-800 dark:bg-stone-800 text-xs"
-                  >
-                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-                      <span className="text-stone-400 font-medium">Original Sentence:</span>
+              {/* 4 Official Criteria Scores */}
+              <div className="space-y-2.5 text-xs">
+                <div className="flex justify-between items-center py-1 border-b border-stone-100 dark:border-stone-800">
+                  <span className="font-bold text-[#111318] dark:text-white">Task Response</span>
+                  <span className="font-mono font-bold text-indigo-600 dark:text-indigo-400">
+                    Band {evaluation.criteria.taskResponse.band.toFixed(1)}
+                  </span>
+                </div>
+                <p className="text-[11px] text-[#5F6368] dark:text-stone-400">
+                  {evaluation.criteria.taskResponse.feedback}
+                </p>
+
+                <div className="flex justify-between items-center py-1 border-b border-stone-100 dark:border-stone-800 pt-2">
+                  <span className="font-bold text-[#111318] dark:text-white">Coherence & Cohesion</span>
+                  <span className="font-mono font-bold text-indigo-600 dark:text-indigo-400">
+                    Band {evaluation.criteria.coherenceCohesion.band.toFixed(1)}
+                  </span>
+                </div>
+                <p className="text-[11px] text-[#5F6368] dark:text-stone-400">
+                  {evaluation.criteria.coherenceCohesion.feedback}
+                </p>
+
+                <div className="flex justify-between items-center py-1 border-b border-stone-100 dark:border-stone-800 pt-2">
+                  <span className="font-bold text-[#111318] dark:text-white">Lexical Resource</span>
+                  <span className="font-mono font-bold text-indigo-600 dark:text-indigo-400">
+                    Band {evaluation.criteria.lexicalResource.band.toFixed(1)}
+                  </span>
+                </div>
+                <p className="text-[11px] text-[#5F6368] dark:text-stone-400">
+                  {evaluation.criteria.lexicalResource.feedback}
+                </p>
+
+                <div className="flex justify-between items-center py-1 border-b border-stone-100 dark:border-stone-800 pt-2">
+                  <span className="font-bold text-[#111318] dark:text-white">Grammatical Range</span>
+                  <span className="font-mono font-bold text-indigo-600 dark:text-indigo-400">
+                    Band {evaluation.criteria.grammaticalRange.band.toFixed(1)}
+                  </span>
+                </div>
+                <p className="text-[11px] text-[#5F6368] dark:text-stone-400">
+                  {evaluation.criteria.grammaticalRange.feedback}
+                </p>
+              </div>
+
+              {/* Suggestions to upgrade */}
+              {evaluation.suggestions.length > 0 && (
+                <div className="mt-4 pt-3 border-t border-stone-100 dark:border-stone-800 space-y-2">
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-[#111318] dark:text-white block">
+                    Band 8.0 Upgrades:
+                  </span>
+                  {evaluation.suggestions.slice(0, 2).map((sugg, i) => (
+                    <div key={i} className="rounded-lg bg-indigo-50/50 p-2.5 text-xs dark:bg-indigo-950/40">
+                      <p className="text-[11px] text-[#5F6368] dark:text-stone-400 line-through">
+                        {sugg.original}
+                      </p>
+                      <p className="mt-1 font-medium text-indigo-700 dark:text-indigo-300">
+                        {sugg.improved}
+                      </p>
                       <button
-                        onClick={() => handleApplyAISuggestion(anno.improved, anno.original)}
-                        className="self-start sm:self-auto rounded-full bg-stone-900 px-3 py-1 text-[11px] font-semibold text-white dark:bg-stone-100 dark:text-stone-900"
+                        onClick={() => handleApplyAISuggestion(sugg.improved, sugg.original)}
+                        className="mt-1 text-[10px] font-bold text-indigo-600 hover:underline dark:text-indigo-400"
                       >
-                        Apply AI Polish
+                        Apply to draft →
                       </button>
                     </div>
-                    <p className="mt-1 line-through text-stone-500 dark:text-stone-400">
-                      "{anno.original}"
-                    </p>
-
-                    <p className="mt-2 font-medium text-stone-400">Band 8.0 Upgrade:</p>
-                    <p className="mt-0.5 font-medium text-stone-900 dark:text-stone-100">
-                      "{anno.improved}"
-                    </p>
-
-                    <p className="mt-1.5 text-[11px] text-stone-500 italic">
-                      Why: {anno.reason}
-                    </p>
-                  </div>
-                ))}
-              </div>
+                  ))}
+                </div>
+              )}
             </div>
-          )}
-
-          {/* Recommended Collocations */}
-          {evaluation.suggestedVocabToSave && evaluation.suggestedVocabToSave.length > 0 && (
-            <div className="rounded-2xl border border-stone-200/80 bg-white p-6 shadow-2xs dark:border-stone-800 dark:bg-stone-850">
-              <div className="flex items-center justify-between border-b border-stone-100 pb-3 dark:border-stone-800">
-                <h4 className="text-xs font-semibold uppercase tracking-wider text-stone-400">
-                  Recommended High-Band Collocations
-                </h4>
-                <span className="text-[11px] text-stone-400">Save to Vault</span>
-              </div>
-
-              <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2">
-                {evaluation.suggestedVocabToSave.map((w, idx) => (
-                  <div
-                    key={idx}
-                    className="flex items-start justify-between rounded-xl border border-stone-100 bg-[#FAF9F5] p-3 dark:border-stone-800 dark:bg-stone-800 text-xs"
-                  >
-                    <div>
-                      <span className="font-semibold text-stone-900 dark:text-white">{w.word}</span>{' '}
-                      <span className="text-[10px] text-stone-400">({w.pos})</span>
-                      <p className="mt-0.5 text-stone-600 dark:text-stone-300">{w.meaning}</p>
-                    </div>
-
-                    <button
-                      onClick={() => handleSaveSuggestedWord(w)}
-                      className="text-stone-400 hover:text-stone-800 dark:hover:text-stone-200"
-                      title="Save word"
-                    >
-                      <BookmarkPlus className="h-4 w-4" />
-                    </button>
-                  </div>
-                ))}
-              </div>
+          ) : (
+            <div className="rounded-2xl border border-dashed border-stone-200 p-6 text-center dark:border-stone-800">
+              <span className="text-xs font-medium text-[#5F6368] dark:text-stone-400 block">
+                NOVA analysis is ready when you submit your draft.
+              </span>
             </div>
           )}
         </div>
-      )}
+      </div>
     </div>
   );
 };
