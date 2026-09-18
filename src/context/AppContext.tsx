@@ -59,16 +59,15 @@ interface AppContextType {
   resetAllData: () => void;
 }
 
-const CLEAN_STATE_KEY = 'ielts_nova_clean_state_v1';
+const CLEAN_STATE_KEY = 'ielts_nova_clean_state_v3_white';
 
-// One-time migration/purge of any stale cached mock data to ensure 100% clean initial state
+// One-time migration to guarantee clean white light theme default
 try {
   if (typeof window !== 'undefined' && localStorage.getItem(CLEAN_STATE_KEY) !== 'true') {
-    localStorage.removeItem('ielts_nova_user_profile');
-    localStorage.removeItem('ielts_nova_vocab');
-    localStorage.removeItem('ielts_nova_activities');
-    localStorage.removeItem('ielts_nova_theme');
+    localStorage.setItem('ielts_nova_theme', 'light');
     localStorage.setItem(CLEAN_STATE_KEY, 'true');
+    document.documentElement.classList.remove('dark');
+    document.documentElement.style.colorScheme = 'light';
   }
 } catch {}
 
@@ -81,33 +80,14 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [theme, setThemeState] = useState<AppTheme>(() => {
     try {
       const saved = localStorage.getItem('ielts_nova_theme') as AppTheme;
-      if (saved === 'light' || saved === 'dark' || saved === 'system') {
+      if (saved === 'light' || saved === 'dark') {
         return saved;
       }
     } catch {}
     return 'light';
   });
 
-  const [systemPrefersDark, setSystemPrefersDark] = useState<boolean>(() => {
-    if (typeof window !== 'undefined' && window.matchMedia) {
-      return window.matchMedia('(prefers-color-scheme: dark)').matches;
-    }
-    return false;
-  });
-
-  // Listen for system theme changes dynamically
-  useEffect(() => {
-    if (typeof window === 'undefined' || !window.matchMedia) return;
-    const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
-    const handleChange = (e: MediaQueryListEvent) => {
-      setSystemPrefersDark(e.matches);
-    };
-    mediaQuery.addEventListener('change', handleChange);
-    return () => mediaQuery.removeEventListener('change', handleChange);
-  }, []);
-
-  const effectiveTheme: 'light' | 'dark' =
-    theme === 'system' ? (systemPrefersDark ? 'dark' : 'light') : theme;
+  const effectiveTheme: 'light' | 'dark' = theme === 'dark' ? 'dark' : 'light';
 
   // Synchronize .dark class and color-scheme style on documentElement
   useEffect(() => {

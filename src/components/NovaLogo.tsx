@@ -7,14 +7,15 @@ export interface NovaSymbolProps {
 }
 
 /**
- * ORIGINAL NOVA SYMBOL
- * Fusion of:
- * - Letter N (vertical pillars and dynamic forward diagonal)
- * - Orbital movement (sweeping elliptical trajectories)
- * - Language intelligence & nova star (radiant core focal node)
+ * ORIGINAL GEOMETRIC NOVA SYMBOL
+ * Conceptual architectural fusion of:
+ * - Geometric letter 'N' (monumental vertical steles and forward kinetic diagonal)
+ * - Orbital trajectory (elliptical planetary coordinate ring)
+ * - Luminous Nova / Star (4-point central diamond precision spark)
+ * - AI Intelligence node (lime/mint pulse beacon)
  */
 export const NovaSymbol: React.FC<NovaSymbolProps> = ({
-  size = 28,
+  size = 32,
   variant = 'indigo',
   className = '',
 }) => {
@@ -22,90 +23,96 @@ export const NovaSymbol: React.FC<NovaSymbolProps> = ({
   const isDark = variant === 'dark';
   const isMono = variant === 'monochrome';
 
-  // Primary colors
+  // Core Palette
   const primaryColor = isWhite ? '#FFFFFF' : isDark ? '#111318' : isMono ? 'currentColor' : '#4F46E5';
-  const secondaryColor = isWhite ? '#C7D2FE' : isDark ? '#626873' : isMono ? 'currentColor' : '#7C3AED';
-  const accentColor = isWhite ? '#D9F99D' : isDark ? '#4F46E5' : isMono ? 'currentColor' : '#10B981';
+  const secondaryColor = isWhite ? '#E0E7FF' : isDark ? '#4F46E5' : isMono ? 'currentColor' : '#7C3AED';
+  const accentMint = isWhite ? '#A7F3D0' : isDark ? '#10B981' : isMono ? 'currentColor' : '#10B981';
 
   return (
     <svg
       width={size}
       height={size}
-      viewBox="0 0 32 32"
+      viewBox="0 0 36 36"
       fill="none"
       xmlns="http://www.w3.org/2000/svg"
       className={`shrink-0 select-none ${className}`}
-      aria-label="NOVA Symbol"
+      aria-label="NOVA Geometric Symbol"
     >
       <defs>
-        <linearGradient id="nova-grad-primary" x1="4" y1="4" x2="28" y2="28" gradientUnits="userSpaceOnUse">
+        <linearGradient id="nova-grad-n" x1="6" y1="6" x2="30" y2="30" gradientUnits="userSpaceOnUse">
           <stop offset="0%" stopColor={primaryColor} />
           <stop offset="100%" stopColor={secondaryColor} />
         </linearGradient>
-        <linearGradient id="nova-orbit-grad" x1="2" y1="16" x2="30" y2="16" gradientUnits="userSpaceOnUse">
-          <stop offset="0%" stopColor={primaryColor} stopOpacity="0.8" />
-          <stop offset="50%" stopColor={secondaryColor} stopOpacity="0.3" />
-          <stop offset="100%" stopColor={accentColor} stopOpacity="0.9" />
+        <linearGradient id="nova-grad-orbit" x1="2" y1="18" x2="34" y2="18" gradientUnits="userSpaceOnUse">
+          <stop offset="0%" stopColor={primaryColor} stopOpacity="0.85" />
+          <stop offset="60%" stopColor={secondaryColor} stopOpacity="0.4" />
+          <stop offset="100%" stopColor={accentMint} stopOpacity="0.95" />
         </linearGradient>
       </defs>
 
-      {/* Sweeping Orbital Ellipse (Tilted 25 degrees) */}
+      {/* Planetary Orbital Ring (Tilted at 28 degrees) */}
       <ellipse
-        cx="16"
-        cy="16"
-        rx="13.5"
-        ry="6.5"
-        transform="rotate(-26 16 16)"
-        stroke="url(#nova-orbit-grad)"
-        strokeWidth="1.5"
-        strokeDasharray="42 6"
-        className="opacity-70"
-      />
-
-      {/* Letter 'N' Geometric Pillar Left */}
-      <rect
-        x="7.5"
-        y="6.5"
-        width="3"
-        height="19"
-        rx="1.5"
-        fill="url(#nova-grad-primary)"
-      />
-
-      {/* Letter 'N' Geometric Pillar Right */}
-      <rect
-        x="21.5"
-        y="6.5"
-        width="3"
-        height="19"
-        rx="1.5"
-        fill="url(#nova-grad-primary)"
-      />
-
-      {/* Forward Diagonal Energy Beam connecting pillars */}
-      <path
-        d="M8.5 8L23.5 24"
-        stroke="url(#nova-grad-primary)"
-        strokeWidth="3.2"
+        cx="18"
+        cy="18"
+        rx="15"
+        ry="7"
+        transform="rotate(-28 18 18)"
+        stroke="url(#nova-grad-orbit)"
+        strokeWidth="1.6"
+        strokeDasharray="48 6"
         strokeLinecap="round"
       />
 
-      {/* Central Nova Star / Luminous Intelligence Node */}
+      {/* Orbiting Satellite Node (Intelligence Anchor) */}
       <circle
-        cx="16"
-        cy="16"
-        r="2.5"
-        fill={accentColor}
-        className="drop-shadow-xs"
+        cx="30"
+        cy="12"
+        r="2"
+        fill={accentMint}
+        stroke={isWhite ? '#4F46E5' : '#FFFFFF'}
+        strokeWidth="1"
       />
 
-      {/* 4-point Micro Radiance Spark */}
+      {/* Letter 'N' Left Pillar */}
+      <rect
+        x="8"
+        y="7"
+        width="3.6"
+        height="22"
+        rx="1.8"
+        fill="url(#nova-grad-n)"
+      />
+
+      {/* Letter 'N' Right Pillar */}
+      <rect
+        x="24.4"
+        y="7"
+        width="3.6"
+        height="22"
+        rx="1.8"
+        fill="url(#nova-grad-n)"
+      />
+
+      {/* Dynamic Kinetic Diagonal Beam */}
       <path
-        d="M16 11.5V13M16 19V20.5M11.5 16H13M19 16H20.5"
-        stroke={isWhite ? '#FFFFFF' : '#4F46E5'}
-        strokeWidth="1.2"
+        d="M9.8 8.8L26.2 27.2"
+        stroke="url(#nova-grad-n)"
+        strokeWidth="3.6"
         strokeLinecap="round"
-        className="opacity-60"
+      />
+
+      {/* Central Nova Radiant Diamond (4-Point Star) */}
+      <path
+        d="M18 13.5L19.4 17.2L22.5 18L19.4 18.8L18 22.5L16.6 18.8L13.5 18L16.6 17.2Z"
+        fill={accentMint}
+      />
+
+      {/* Core Intelligence Spark */}
+      <circle
+        cx="18"
+        cy="18"
+        r="1.2"
+        fill="#FFFFFF"
       />
     </svg>
   );
@@ -123,7 +130,7 @@ export interface NovaLogoProps {
 export const NovaLogo: React.FC<NovaLogoProps> = ({
   size = 'md',
   variant = 'full',
-  showSubtitle = true,
+  showSubtitle = false,
   themeMode = 'light',
   className = '',
   onClick,
@@ -131,33 +138,33 @@ export const NovaLogo: React.FC<NovaLogoProps> = ({
   const isOnIndigo = themeMode === 'on-indigo';
 
   const iconSizes = {
-    xs: 18,
-    sm: 22,
-    md: 26,
-    lg: 32,
-    xl: 44,
+    xs: 20,
+    sm: 26,
+    md: 32,
+    lg: 38,
+    xl: 48,
   }[size];
 
   const titleSizes = {
     xs: 'text-xs',
-    sm: 'text-xs sm:text-sm',
-    md: 'text-sm sm:text-base',
-    lg: 'text-base sm:text-lg',
-    xl: 'text-xl sm:text-2xl',
+    sm: 'text-sm font-black',
+    md: 'text-base font-black',
+    lg: 'text-lg font-black',
+    xl: 'text-2xl font-black',
   }[size];
 
-  // App Icon variant (Squircle with gradient for mobile / app store)
+  // App Icon variant (Squircle for App Store / PWA install)
   if (variant === 'app-icon') {
     return (
       <div
         onClick={onClick}
-        className={`relative flex items-center justify-center rounded-2xl bg-gradient-to-br from-[#4F46E5] via-[#4338CA] to-[#312E81] p-2.5 shadow-md shadow-indigo-500/20 select-none ${
-          onClick ? 'cursor-pointer' : ''
+        className={`relative flex items-center justify-center rounded-2xl bg-gradient-to-br from-[#4F46E5] via-[#4338CA] to-[#312E81] shadow-lg shadow-indigo-500/25 select-none ${
+          onClick ? 'cursor-pointer hover:opacity-95' : ''
         } ${className}`}
-        style={{ width: typeof size === 'number' ? size : 48, height: typeof size === 'number' ? size : 48 }}
+        style={{ width: typeof size === 'number' ? size : 56, height: typeof size === 'number' ? size : 56 }}
       >
-        <div className="absolute inset-0 rounded-2xl border border-white/20" />
-        <NovaSymbol size={30} variant="white" />
+        <div className="absolute inset-0 rounded-2xl border border-white/20 pointer-events-none" />
+        <NovaSymbol size={34} variant="white" />
       </div>
     );
   }
@@ -180,16 +187,16 @@ export const NovaLogo: React.FC<NovaLogoProps> = ({
   return (
     <div
       onClick={onClick}
-      className={`inline-flex items-center gap-2.5 select-none ${
-        onClick ? 'cursor-pointer' : ''
+      className={`inline-flex items-center gap-3 select-none ${
+        onClick ? 'cursor-pointer group' : ''
       } ${className}`}
     >
       {/* Icon frame */}
       <div
-        className={`relative flex items-center justify-center rounded-xl p-1.5 transition-all ${
+        className={`relative flex items-center justify-center rounded-xl p-1 transition-all ${
           isOnIndigo
             ? 'bg-white/10 text-white'
-            : 'border border-stone-200/90 bg-white text-indigo-600 shadow-2xs dark:border-stone-800 dark:bg-stone-900'
+            : 'bg-indigo-50/70 border border-indigo-100 group-hover:border-indigo-300'
         }`}
       >
         <NovaSymbol
@@ -198,32 +205,25 @@ export const NovaLogo: React.FC<NovaLogoProps> = ({
         />
       </div>
 
-      {/* Typography */}
-      <div className="flex flex-col leading-none">
-        <div className="flex items-center gap-1.5">
+      {/* Brand Typography */}
+      <div className="flex flex-col leading-tight">
+        <div className="flex items-center gap-2">
           <span
-            className={`font-black tracking-tight ${
-              isOnIndigo
-                ? 'text-white'
-                : 'text-[#111318] dark:text-white'
+            className={`tracking-tight ${
+              isOnIndigo ? 'text-white' : 'text-[#111318]'
             } ${titleSizes}`}
           >
-            IELTS NOVA AI
-          </span>
-          <span className="rounded-sm bg-indigo-50 px-1 py-0.5 text-[9px] font-bold tracking-wider text-indigo-600 dark:bg-indigo-950/60 dark:text-indigo-400">
-            PRO
+            IELTS NOVA <span className="text-indigo-600">AI</span>
           </span>
         </div>
 
-        {showSubtitle && variant === 'full' && (
+        {showSubtitle && (
           <span
-            className={`mt-1 text-[10px] tracking-normal ${
-              isOnIndigo
-                ? 'text-indigo-200'
-                : 'text-[#626873] dark:text-stone-400'
+            className={`text-[10px] tracking-wider uppercase font-bold ${
+              isOnIndigo ? 'text-indigo-200' : 'text-[#5C616B]'
             }`}
           >
-            Editorial IELTS Companion
+            Editorial Intelligence
           </span>
         )}
       </div>

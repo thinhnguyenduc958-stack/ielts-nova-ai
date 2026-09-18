@@ -9,8 +9,6 @@ import {
   MicOff,
   Volume2,
   Clock,
-  Loader2,
-  Activity,
   Award,
   Sparkles,
   CheckCircle2,
@@ -194,23 +192,23 @@ export const SpeakingModule: React.FC = () => {
       : partData.questions?.[0] || 'Tell me about your hometown or your studies.';
 
   return (
-    <div className="mx-auto max-w-5xl space-y-8 pb-24 text-[#111318] dark:text-[#F3F4F6]">
+    <div className="mx-auto max-w-5xl space-y-8 pb-24 text-[#111318] bg-white">
       {/* Editorial Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-stone-200/80 pb-5 dark:border-stone-800">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-stone-200/80 pb-5">
         <div className="space-y-1">
-          <span className="text-[11px] font-bold uppercase tracking-widest text-indigo-600 dark:text-indigo-400">
+          <span className="text-[11px] font-bold uppercase tracking-widest text-indigo-600">
             SPEAKING INTERVIEW ROOM
           </span>
-          <h1 className="text-3xl sm:text-4xl font-black tracking-tight text-[#111318] dark:text-white uppercase">
+          <h1 className="text-3xl sm:text-4xl font-black tracking-tight text-[#111318] uppercase">
             AI Examiner Studio
           </h1>
-          <p className="text-xs sm:text-sm text-[#5F6368] dark:text-stone-400">
+          <p className="text-xs sm:text-sm text-[#5C616B]">
             Calibrated Cambridge IELTS interview simulation with real-time acoustic feedback.
           </p>
         </div>
 
         {/* Part 1 / 2 / 3 Selector */}
-        <div className="flex items-center rounded-xl border border-stone-200 bg-white p-1 text-xs font-semibold dark:border-stone-800 dark:bg-stone-900 self-start sm:self-auto">
+        <div className="flex items-center rounded-xl border border-stone-200 bg-white p-1 text-xs font-semibold self-start sm:self-auto">
           {[1, 2, 3].map((pt) => (
             <button
               key={pt}
@@ -220,10 +218,10 @@ export const SpeakingModule: React.FC = () => {
                 setSpeakingSeconds(0);
                 setTranscript('');
               }}
-              className={`rounded-lg px-4 py-1.5 transition-all ${
+              className={`rounded-lg px-4 py-1.5 transition-all cursor-pointer ${
                 activePart === pt
                   ? 'bg-indigo-600 text-white shadow-xs'
-                  : 'text-[#5F6368] hover:text-[#111318] dark:text-stone-400 dark:hover:text-white'
+                  : 'text-[#5C616B] hover:text-[#111318]'
               }`}
             >
               Part {pt}
@@ -232,12 +230,12 @@ export const SpeakingModule: React.FC = () => {
         </div>
       </div>
 
-      {/* SECTION 20: FOCUSED INTERVIEW EXPERIENCE */}
+      {/* 17. FOCUSED INTERVIEW EXPERIENCE: White Background, Large Question, Central NOVA AI Core */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
         {/* Left: AI Examiner Focal Pod (5 cols) */}
         <div className="lg:col-span-5 space-y-5">
-          <div className="rounded-2xl border border-stone-200/90 bg-white p-6 sm:p-8 text-center shadow-xs dark:border-stone-800 dark:bg-stone-900 flex flex-col items-center">
-            <span className="text-[10px] font-bold uppercase tracking-widest text-[#5F6368] dark:text-stone-400 mb-4">
+          <div className="rounded-2xl border border-stone-200 bg-white p-6 sm:p-8 text-center shadow-xs flex flex-col items-center">
+            <span className="text-[10px] font-bold uppercase tracking-widest text-[#5C616B] mb-4">
               NOVA AI EXAMINER
             </span>
 
@@ -258,7 +256,7 @@ export const SpeakingModule: React.FC = () => {
                       duration: 0.6 + (i % 3) * 0.2,
                       ease: 'easeInOut',
                     }}
-                    className="w-1 rounded-full bg-indigo-600 dark:bg-indigo-400"
+                    className="w-1 rounded-full bg-indigo-600"
                   />
                 ))}
               </div>
@@ -266,10 +264,10 @@ export const SpeakingModule: React.FC = () => {
 
             {/* Recording Timer */}
             <div className="mt-4">
-              <span className="font-mono text-3xl font-black text-[#111318] dark:text-white">
+              <span className="font-mono text-3xl font-black text-[#111318]">
                 {formatTimer(speakingSeconds)}
               </span>
-              <p className="text-xs text-[#5F6368] dark:text-stone-400 mt-0.5">
+              <p className="text-xs text-[#5C616B] mt-0.5">
                 {isRecording ? 'Listening to speech...' : 'Ready to record'}
               </p>
             </div>
@@ -278,7 +276,7 @@ export const SpeakingModule: React.FC = () => {
             <div className="mt-6 flex flex-col items-center gap-2.5 w-full">
               <button
                 onClick={toggleRecording}
-                className={`w-full flex items-center justify-center gap-2 rounded-xl py-3.5 text-xs font-bold transition-all active:scale-98 shadow-xs ${
+                className={`w-full flex items-center justify-center gap-2 rounded-xl py-3.5 text-xs font-bold transition-all active:scale-98 shadow-xs cursor-pointer ${
                   isRecording
                     ? 'bg-rose-600 text-white hover:bg-rose-700 shadow-rose-600/20'
                     : 'bg-indigo-600 text-white hover:bg-indigo-700 shadow-indigo-600/20'
@@ -290,7 +288,7 @@ export const SpeakingModule: React.FC = () => {
 
               <button
                 onClick={handleSpeakQuestion}
-                className="inline-flex items-center gap-1.5 text-xs font-semibold text-[#5F6368] hover:text-indigo-600 dark:text-stone-400 dark:hover:text-indigo-400 pt-1"
+                className="inline-flex items-center gap-1.5 text-xs font-semibold text-[#5C616B] hover:text-indigo-600 pt-1 cursor-pointer"
               >
                 <Volume2 className="h-3.5 w-3.5" />
                 <span>Hear Examiner Read Prompt</span>
@@ -300,21 +298,21 @@ export const SpeakingModule: React.FC = () => {
 
           {/* Quick Metrics */}
           <div className="grid grid-cols-2 gap-3">
-            <div className="rounded-xl border border-stone-200/90 bg-white p-3.5 dark:border-stone-800 dark:bg-stone-900">
-              <span className="text-[10px] font-bold uppercase tracking-wider text-[#5F6368] dark:text-stone-400">
+            <div className="rounded-xl border border-stone-200 bg-white p-3.5">
+              <span className="text-[10px] font-bold uppercase tracking-wider text-[#5C616B]">
                 Pacing
               </span>
-              <p className="mt-1 font-mono text-lg font-black text-[#111318] dark:text-white">
-                {wordsPerMinute} <span className="text-xs font-normal text-[#5F6368]">WPM</span>
+              <p className="mt-1 font-mono text-lg font-black text-[#111318]">
+                {wordsPerMinute} <span className="text-xs font-normal text-[#5C616B]">WPM</span>
               </p>
             </div>
 
-            <div className="rounded-xl border border-stone-200/90 bg-white p-3.5 dark:border-stone-800 dark:bg-stone-900">
-              <span className="text-[10px] font-bold uppercase tracking-wider text-[#5F6368] dark:text-stone-400">
+            <div className="rounded-xl border border-stone-200 bg-white p-3.5">
+              <span className="text-[10px] font-bold uppercase tracking-wider text-[#5C616B]">
                 Fillers
               </span>
-              <p className="mt-1 font-mono text-lg font-black text-[#111318] dark:text-white">
-                {fillerCount} <span className="text-xs font-normal text-[#5F6368]">tokens</span>
+              <p className="mt-1 font-mono text-lg font-black text-[#111318]">
+                {fillerCount} <span className="text-xs font-normal text-[#5C616B]">tokens</span>
               </p>
             </div>
           </div>
@@ -323,16 +321,16 @@ export const SpeakingModule: React.FC = () => {
         {/* Right: Large Question & Live Transcript (7 cols) */}
         <div className="lg:col-span-7 space-y-5">
           {/* Large Question Display */}
-          <div className="rounded-2xl border border-stone-200/90 bg-white p-6 sm:p-7 shadow-xs dark:border-stone-800 dark:bg-stone-900 space-y-4">
-            <div className="flex items-center justify-between border-b border-stone-100 pb-3 dark:border-stone-800">
-              <span className="text-xs font-bold uppercase tracking-wider text-indigo-600 dark:text-indigo-400">
+          <div className="rounded-2xl border border-stone-200 bg-white p-6 sm:p-7 shadow-xs space-y-4">
+            <div className="flex items-center justify-between border-b border-stone-100 pb-3">
+              <span className="text-xs font-bold uppercase tracking-wider text-indigo-600">
                 Part {activePart} {activePart === 2 ? 'Cue Card Topic' : 'Discussion Question'}
               </span>
 
               {activePart === 2 && (
                 <div className="flex items-center gap-2">
                   <Clock className="h-3.5 w-3.5 text-stone-400" />
-                  <span className="font-mono text-xs font-bold text-[#111318] dark:text-white">
+                  <span className="font-mono text-xs font-bold text-[#111318]">
                     Prep: {formatTimer(prepSeconds)}
                   </span>
                   <button
@@ -340,7 +338,7 @@ export const SpeakingModule: React.FC = () => {
                       setIsPrepping(!isPrepping);
                       if (!isPrepping && prepSeconds === 0) setPrepSeconds(60);
                     }}
-                    className="rounded bg-stone-100 px-2 py-0.5 text-[10px] font-bold text-stone-800 hover:bg-stone-200 dark:bg-stone-800 dark:text-stone-200"
+                    className="rounded bg-stone-100 px-2 py-0.5 text-[10px] font-bold text-stone-800 hover:bg-stone-200 cursor-pointer"
                   >
                     {isPrepping ? 'Pause' : 'Start 1-Min Prep'}
                   </button>
@@ -348,163 +346,131 @@ export const SpeakingModule: React.FC = () => {
               )}
             </div>
 
-            <h2 className="text-2xl sm:text-3xl font-black text-[#111318] dark:text-white tracking-tight leading-snug">
-              "{currentQuestionText}"
+            {/* Large Question Typography */}
+            <h2 className="text-xl sm:text-2xl font-bold tracking-tight text-[#111318] leading-snug">
+              {currentQuestionText}
             </h2>
 
+            {/* Part 2 Bullet Points */}
             {activePart === 2 && partData.cueCard && (
-              <div className="rounded-xl bg-stone-50 p-4 dark:bg-stone-850 space-y-2 text-xs text-[#5F6368] dark:text-stone-400">
-                <p className="font-bold text-[#111318] dark:text-stone-200">You should say:</p>
-                <ul className="space-y-1 pl-4 list-disc">
-                  {partData.cueCard.bulletPoints.map((pt, i) => (
-                    <li key={i}>{pt}</li>
+              <div className="rounded-xl border border-stone-100 bg-stone-50/60 p-4 text-xs space-y-2">
+                <p className="font-semibold text-[#111318]">You should say:</p>
+                <ul className="list-disc list-inside space-y-1 text-[#5C616B]">
+                  {partData.cueCard.bulletPoints.map((bp, i) => (
+                    <li key={i}>{bp}</li>
                   ))}
                 </ul>
               </div>
             )}
           </div>
 
-          {/* Live Speech Transcript Box */}
-          <div className="rounded-2xl border border-stone-200/90 bg-white p-6 sm:p-7 shadow-xs dark:border-stone-800 dark:bg-stone-900 space-y-3">
-            <div className="flex items-center justify-between border-b border-stone-100 pb-3 dark:border-stone-800">
-              <span className="text-xs font-bold uppercase tracking-wider text-[#5F6368] dark:text-stone-400">
-                Live Speech Transcript
+          {/* Transcript / Answer Area */}
+          <div className="rounded-2xl border border-stone-200 bg-white p-6 sm:p-7 shadow-xs space-y-4">
+            <div className="flex items-center justify-between border-b border-stone-100 pb-3">
+              <span className="text-xs font-bold uppercase tracking-wider text-[#5C616B]">
+                Your Speech Transcript
               </span>
-              <span className="text-[11px] text-[#5F6368] dark:text-stone-400">
-                {totalWords} words recorded
+              <span className="text-xs font-mono text-[#5C616B]">
+                {totalWords} words spoken
               </span>
             </div>
 
             <textarea
               value={transcript}
               onChange={(e) => setTranscript(e.target.value)}
+              placeholder="Click 'Start Speaking' and begin talking. Your words will transcribe here in real time..."
               rows={5}
-              placeholder="Your spoken words will appear here automatically in real-time, or you can type directly..."
-              className="w-full text-sm leading-relaxed text-[#111318] placeholder:text-stone-300 focus:outline-hidden dark:bg-stone-900 dark:text-stone-200 font-sans resize-none"
+              className="w-full resize-none rounded-xl border border-stone-200 bg-white p-4 text-sm text-[#111318] placeholder:text-stone-400 focus:border-indigo-600 focus:outline-none focus:ring-1 focus:ring-indigo-600 font-normal leading-relaxed"
             />
 
-            <div className="flex items-center justify-between border-t border-stone-100 pt-3 dark:border-stone-800">
+            <div className="flex items-center justify-between pt-1">
               <button
                 onClick={() => {
                   setTranscript('');
                   setSpeakingSeconds(0);
                   setEvaluation(null);
                 }}
-                className="flex items-center gap-1 text-xs text-[#5F6368] hover:text-[#111318] dark:text-stone-400 dark:hover:text-white"
+                className="flex items-center gap-1.5 text-xs text-[#5C616B] hover:text-[#111318] cursor-pointer"
               >
-                <RotateCcw className="h-3 w-3" />
+                <RotateCcw className="h-3.5 w-3.5" />
                 <span>Reset</span>
               </button>
 
               <button
                 onClick={handleEvaluateSpeaking}
-                disabled={loading || !transcript.trim()}
-                className="flex items-center gap-2 rounded-xl bg-indigo-600 px-6 py-2.5 text-xs font-bold text-white shadow-xs hover:bg-indigo-700 disabled:opacity-50 transition-all"
+                disabled={loading || totalWords < 5}
+                className="flex items-center gap-2 rounded-xl bg-indigo-600 px-5 py-2.5 text-xs font-bold text-white shadow-xs hover:bg-indigo-700 disabled:opacity-50 transition-all cursor-pointer"
               >
-                {loading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Sparkles className="h-3.5 w-3.5" />}
-                <span>Evaluate Response</span>
+                <Sparkles className="h-3.5 w-3.5" />
+                <span>{loading ? 'Evaluating with Cambridge Rubric...' : 'Submit to Examiner'}</span>
               </button>
             </div>
           </div>
         </div>
       </div>
 
-      {/* Evaluation Results Drawer */}
+      {/* Detailed IELTS Evaluation Output */}
       {evaluation && (
-        <div className="rounded-2xl border border-indigo-100 bg-white p-6 sm:p-8 shadow-sm dark:border-stone-800 dark:bg-stone-900 space-y-6 animate-in fade-in duration-300">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-stone-100 pb-5 dark:border-stone-800">
+        <div className="rounded-2xl border border-indigo-100 bg-white p-6 sm:p-8 shadow-sm space-y-6">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-stone-100 pb-5">
             <div>
-              <span className="text-[11px] font-bold uppercase tracking-wider text-indigo-600 dark:text-indigo-400">
-                CAMBRIDGE ASSESSMENT CRITERIA
+              <span className="text-[11px] font-bold uppercase tracking-widest text-indigo-600">
+                CAMBRIDGE SPEAKING SCORE REPORT
               </span>
-              <h3 className="text-2xl font-black text-[#111318] dark:text-white">
-                Official Speaking Scorecard
+              <h3 className="text-2xl font-black text-[#111318] mt-0.5">
+                Evaluated Band: {evaluation.overallBand.toFixed(1)}
               </h3>
+              <p className="text-xs text-[#5C616B]">Range: {evaluation.bandRange}</p>
             </div>
 
-            <div className="flex items-center gap-3">
-              <div className="text-right">
-                <span className="text-[10px] uppercase font-bold text-[#5F6368] dark:text-stone-400 block">
-                  Estimated Score
-                </span>
-                <span className="font-mono text-3xl font-black text-indigo-600 dark:text-indigo-400">
-                  Band {evaluation.overallBand.toFixed(1)}
-                </span>
-              </div>
+            <div className="flex items-center gap-2">
+              <span className="rounded-full bg-indigo-50 px-3.5 py-1 text-xs font-bold text-indigo-700">
+                Official 4-Criteria Standard
+              </span>
             </div>
           </div>
 
-          {/* 4 Official Criteria */}
+          {/* 4 Descriptors Grid */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            <div className="rounded-xl bg-stone-50 p-4 dark:bg-stone-850">
-              <div className="flex justify-between items-baseline">
-                <span className="text-xs font-bold text-[#111318] dark:text-white">Fluency & Coherence</span>
-                <span className="font-mono text-base font-bold text-indigo-600 dark:text-indigo-400">
-                  {evaluation.criteriaScores.fluencyAndCoherence.toFixed(1)}
-                </span>
-              </div>
-              <p className="mt-1 text-[11px] text-[#5F6368] dark:text-stone-400">
-                Pacing, discourse markers, hesitation analysis.
-              </p>
+            <div className="rounded-xl border border-stone-200 bg-stone-50/40 p-4 space-y-1.5">
+              <span className="text-[10px] font-bold uppercase text-[#5C616B]">Fluency & Coherence</span>
+              <p className="text-xl font-black text-[#111318]">{evaluation.fluencyCoherence.toFixed(1)}</p>
+              <p className="text-[11px] text-[#5C616B] leading-snug">{evaluation.fluencyFeedback}</p>
             </div>
 
-            <div className="rounded-xl bg-stone-50 p-4 dark:bg-stone-850">
-              <div className="flex justify-between items-baseline">
-                <span className="text-xs font-bold text-[#111318] dark:text-white">Lexical Resource</span>
-                <span className="font-mono text-base font-bold text-indigo-600 dark:text-indigo-400">
-                  {evaluation.criteriaScores.lexicalResource.toFixed(1)}
-                </span>
-              </div>
-              <p className="mt-1 text-[11px] text-[#5F6368] dark:text-stone-400">
-                Topic collocations & idiomatic precision.
-              </p>
+            <div className="rounded-xl border border-stone-200 bg-stone-50/40 p-4 space-y-1.5">
+              <span className="text-[10px] font-bold uppercase text-[#5C616B]">Lexical Resource</span>
+              <p className="text-xl font-black text-[#111318]">{evaluation.lexicalResource.toFixed(1)}</p>
+              <p className="text-[11px] text-[#5C616B] leading-snug">{evaluation.lexicalFeedback}</p>
             </div>
 
-            <div className="rounded-xl bg-stone-50 p-4 dark:bg-stone-850">
-              <div className="flex justify-between items-baseline">
-                <span className="text-xs font-bold text-[#111318] dark:text-white">Grammatical Range</span>
-                <span className="font-mono text-base font-bold text-indigo-600 dark:text-indigo-400">
-                  {evaluation.criteriaScores.grammaticalRange.toFixed(1)}
-                </span>
-              </div>
-              <p className="mt-1 text-[11px] text-[#5F6368] dark:text-stone-400">
-                Complex structures and error frequency.
-              </p>
+            <div className="rounded-xl border border-stone-200 bg-stone-50/40 p-4 space-y-1.5">
+              <span className="text-[10px] font-bold uppercase text-[#5C616B]">Grammar & Accuracy</span>
+              <p className="text-xl font-black text-[#111318]">{evaluation.grammaticalRange.toFixed(1)}</p>
+              <p className="text-[11px] text-[#5C616B] leading-snug">{evaluation.grammarFeedback}</p>
             </div>
 
-            <div className="rounded-xl bg-stone-50 p-4 dark:bg-stone-850">
-              <div className="flex justify-between items-baseline">
-                <span className="text-xs font-bold text-[#111318] dark:text-white">Pronunciation</span>
-                <span className="font-mono text-base font-bold text-indigo-600 dark:text-indigo-400">
-                  {evaluation.criteriaScores.pronunciation.toFixed(1)}
-                </span>
-              </div>
-              <p className="mt-1 text-[11px] text-[#5F6368] dark:text-stone-400">
-                Intonation, rhythm, and clarity of speech.
-              </p>
+            <div className="rounded-xl border border-stone-200 bg-stone-50/40 p-4 space-y-1.5">
+              <span className="text-[10px] font-bold uppercase text-[#5C616B]">Pronunciation</span>
+              <p className="text-xl font-black text-[#111318]">{evaluation.pronunciation.toFixed(1)}</p>
+              <p className="text-[11px] text-[#5C616B] leading-snug">{evaluation.pronunciationFeedback}</p>
             </div>
           </div>
 
-          {/* Detailed Feedback Commentary */}
-          <div className="rounded-xl border border-stone-200/80 p-5 dark:border-stone-800 space-y-3">
-            <h4 className="text-xs font-bold uppercase tracking-wider text-[#111318] dark:text-white">
-              Examiner Observations
-            </h4>
-            <p className="text-xs sm:text-sm text-[#5F6368] dark:text-stone-300 leading-relaxed">
-              {evaluation.overallFeedback}
-            </p>
-
-            {evaluation.modelBand9Response && (
-              <div className="mt-4 pt-4 border-t border-stone-100 dark:border-stone-800">
-                <span className="text-[11px] font-bold uppercase tracking-wider text-emerald-600 dark:text-emerald-400 block mb-1">
-                  Band 9.0 Model Response
-                </span>
-                <p className="text-xs sm:text-sm text-stone-700 dark:text-stone-300 italic leading-relaxed">
-                  "{evaluation.modelBand9Response}"
-                </p>
+          {/* Band 8.0 Model Upgrade */}
+          {evaluation.improvedResponse && (
+            <div className="rounded-xl border border-emerald-200 bg-emerald-50/50 p-5 space-y-2">
+              <div className="flex items-center gap-2">
+                <Award className="h-4 w-4 text-emerald-700" />
+                <h4 className="text-xs font-bold uppercase tracking-wider text-emerald-900">
+                  Examiner's Recommended Band 8.5 Phrasing
+                </h4>
               </div>
-            )}
-          </div>
+              <p className="text-xs sm:text-sm text-emerald-950 font-serif leading-relaxed italic">
+                "{evaluation.improvedResponse}"
+              </p>
+            </div>
+          )}
         </div>
       )}
     </div>
