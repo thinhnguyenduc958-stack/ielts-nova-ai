@@ -43,9 +43,10 @@ export const VocabularyModule: React.FC = () => {
 
   const activeVocabularyList = activeDeck === 'personal' ? vocabulary : systemIELTSVocabulary;
 
-  // Currently inspected word (defaults to 'substantial' or first in active vault)
+  // Currently inspected word (defaults to 'ubiquitous' per Section 19 or first in active vault)
   const defaultWord =
-    activeVocabularyList.find((v) => v.word.toLowerCase() === 'substantial') ||
+    activeVocabularyList.find((v) => v.word.toLowerCase() === 'ubiquitous') ||
+    systemIELTSVocabulary.find((v) => v.word.toLowerCase() === 'ubiquitous') ||
     activeVocabularyList[0] ||
     systemIELTSVocabulary[0];
   const [selectedWord, setSelectedWord] = useState<VocabularyItem>(defaultWord);
@@ -247,43 +248,38 @@ export const VocabularyModule: React.FC = () => {
         </div>
       </div>
 
-      {/* VIEW 1: DEEP FOCUS WORD SHOWCASE (Making the word itself the visual center) */}
+      {/* VIEW 1: WORD OF THE DAY & DEEP FOCUS (Section 19) */}
       {activeView === 'inspect' && selectedWord && (
         <div className="space-y-6">
-          {/* Main Hero Card for the Word */}
-          <div className="relative overflow-hidden rounded-3xl border border-slate-200/90 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900 sm:p-8 lg:p-10">
+          {/* Main Hero Card: Word of the Day */}
+          <div className="relative overflow-hidden rounded-3xl border border-stone-200 bg-white p-6 shadow-xs sm:p-8 lg:p-10">
             {/* Top Bar of Card */}
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-100 pb-6 dark:border-slate-800">
-              <div className="flex items-center gap-3">
-                <span className="rounded-xl border border-sky-200 bg-sky-50 px-3 py-1 text-xs font-bold text-sky-800 uppercase dark:border-sky-900/60 dark:bg-sky-950/60 dark:text-sky-300">
-                  {selectedWord.partOfSpeech}
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-stone-100 pb-5">
+              <div className="flex items-center gap-2.5">
+                <span className="rounded-xl border border-indigo-200 bg-indigo-50 px-3 py-1 text-xs font-bold text-indigo-700 uppercase tracking-wider">
+                  Word of the day
                 </span>
-                <span className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-1 text-xs font-semibold text-slate-600 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300">
-                  Band 7.5+ Lexical Resource
+                <span className="rounded-xl border border-stone-200 bg-stone-50 px-3 py-1 text-xs font-bold text-stone-700">
+                  {selectedWord.ieltsRelevance || 'Band 7.5+'}
+                </span>
+                <span className="rounded-xl border border-stone-200 bg-stone-50 px-2.5 py-1 text-xs font-mono text-stone-600">
+                  {selectedWord.partOfSpeech}
                 </span>
               </div>
 
-              {/* Status Selector & Save to Vault */}
+              {/* Actions: Add to Flashcards, Status, Save to Vault */}
               <div className="flex flex-wrap items-center gap-2">
-                {!vocabulary.some((v) => v.id === selectedWord.id || v.word.toLowerCase() === selectedWord.word.toLowerCase()) ? (
-                  <button
-                    onClick={() => {
-                      addVocabulary(selectedWord);
-                      showToast(`Saved "${selectedWord.word}" to your Personal Vault!`);
-                    }}
-                    className="flex items-center gap-1.5 rounded-xl bg-sky-600 px-3 py-1.5 text-xs font-bold text-white shadow-xs hover:bg-sky-700 active:scale-98 dark:bg-sky-600 dark:hover:bg-sky-500"
-                  >
-                    <Bookmark className="h-3.5 w-3.5" />
-                    <span>Save to My Vault</span>
-                  </button>
-                ) : (
-                  <span className="inline-flex items-center gap-1 text-xs font-bold text-emerald-600 dark:text-emerald-400 mr-1">
-                    <CheckCircle2 className="h-4 w-4" />
-                    <span>Saved in Vault</span>
-                  </span>
-                )}
+                <button
+                  onClick={() => {
+                    addVocabulary(selectedWord);
+                    showToast(`Added "${selectedWord.word}" to Flashcards!`);
+                  }}
+                  className="flex items-center gap-1.5 rounded-xl bg-indigo-600 px-3.5 py-1.5 text-xs font-bold text-white shadow-xs hover:bg-indigo-700 active:scale-98 transition-all cursor-pointer"
+                >
+                  <Bookmark className="h-3.5 w-3.5" />
+                  <span>Add to Flashcards</span>
+                </button>
 
-                <span className="text-xs font-bold uppercase tracking-wider text-slate-400">Mastery:</span>
                 <select
                   value={selectedWord.status}
                   onChange={(e) => {
@@ -292,11 +288,11 @@ export const VocabularyModule: React.FC = () => {
                       updateVocabularyStatus(selectedWord.id, newSt);
                     } else {
                       addVocabulary({ ...selectedWord, status: newSt });
-                      showToast(`Saved "${selectedWord.word}" to your Personal Vault as ${newSt}!`);
+                      showToast(`Saved "${selectedWord.word}" as ${newSt}!`);
                     }
                     setSelectedWord({ ...selectedWord, status: newSt });
                   }}
-                  className="cursor-pointer rounded-xl border border-slate-200 bg-white px-3 py-1.5 text-xs font-bold text-slate-800 focus:outline-hidden dark:border-slate-700 dark:bg-slate-850 dark:text-slate-200"
+                  className="cursor-pointer rounded-xl border border-stone-200 bg-white px-3 py-1.5 text-xs font-bold text-stone-800 outline-hidden"
                 >
                   <option value="new">Newly Added</option>
                   <option value="learning">Active Learning</option>
@@ -306,141 +302,84 @@ export const VocabularyModule: React.FC = () => {
               </div>
             </div>
 
-            {/* Central Word Typography Centerpiece */}
-            <div className="py-8 text-center sm:py-12">
-              <h2 className="text-4xl font-black uppercase tracking-wider text-slate-900 dark:text-white sm:text-5xl lg:text-6xl">
+            {/* Central Word Presentation */}
+            <div className="py-8 text-center sm:py-10">
+              <span className="text-[11px] font-bold uppercase tracking-widest text-indigo-600 mb-1 block">
+                WORD OF THE DAY
+              </span>
+              <h2 className="text-4xl sm:text-5xl lg:text-6xl font-black uppercase tracking-tight text-[#111318]">
                 {selectedWord.word}
               </h2>
 
               <div className="mt-3 flex items-center justify-center gap-3">
-                <span className="font-mono text-base font-medium text-slate-400 dark:text-slate-500 sm:text-lg">
-                  {selectedWord.ipa || '/səbˈstænʃəl/'}
+                <span className="font-mono text-base font-semibold text-[#5C616B]">
+                  IPA: {selectedWord.ipa || '/juːˈbɪk.wɪ.təs/'}
                 </span>
 
+                {/* Pronounce UK */}
                 <button
                   onClick={() => apiService.speakText(selectedWord.word, 'UK')}
-                  className="flex items-center gap-1.5 rounded-full border border-sky-200 bg-sky-50 px-3 py-1 text-xs font-semibold text-sky-800 shadow-2xs hover:bg-sky-100 dark:border-sky-900/60 dark:bg-sky-950/60 dark:text-sky-300"
+                  className="flex items-center gap-1.5 rounded-xl border border-indigo-200 bg-indigo-50 px-3 py-1 text-xs font-bold text-indigo-700 hover:bg-indigo-100 transition-all cursor-pointer shadow-2xs"
                   title="Pronounce UK"
                 >
-                  <Volume2 className="h-3.5 w-3.5 text-sky-600 dark:text-sky-400" />
-                  <span>🇬🇧 UK</span>
+                  <Volume2 className="h-3.5 w-3.5" />
+                  <span>Pronounce UK</span>
                 </button>
 
+                {/* Pronounce US */}
                 <button
                   onClick={() => apiService.speakText(selectedWord.word, 'US')}
-                  className="flex items-center gap-1.5 rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-xs font-semibold text-slate-700 shadow-2xs hover:bg-slate-100 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300"
+                  className="flex items-center gap-1.5 rounded-xl border border-stone-200 bg-stone-50 px-3 py-1 text-xs font-bold text-[#111318] hover:bg-stone-100 transition-all cursor-pointer shadow-2xs"
                   title="Pronounce US"
                 >
-                  <Volume2 className="h-3.5 w-3.5 text-slate-500 dark:text-slate-400" />
-                  <span>🇺🇸 US</span>
+                  <Volume2 className="h-3.5 w-3.5 text-stone-500" />
+                  <span>Pronounce US</span>
                 </button>
               </div>
 
-              {/* High-Impact Meaning Box */}
-              <div className="mx-auto mt-6 max-w-xl rounded-2xl border border-sky-100 bg-sky-50/50 p-4 shadow-2xs dark:border-sky-950/60 dark:bg-sky-950/30">
-                <p className="text-xs font-bold uppercase tracking-wider text-sky-800 dark:text-sky-300">Vietnamese Meaning</p>
-                <p className="mt-1 text-lg font-black text-slate-900 dark:text-white sm:text-xl">
+              {/* Vietnamese Meaning Box */}
+              <div className="mx-auto mt-6 max-w-xl rounded-2xl border border-indigo-100 bg-[#F6F4FF] p-4 text-center">
+                <p className="text-[11px] font-bold uppercase tracking-wider text-indigo-700">Vietnamese Meaning</p>
+                <p className="mt-1 text-lg sm:text-xl font-black text-[#111318]">
                   {selectedWord.meaning}
                 </p>
               </div>
-
-              {/* Memory Strength Indicator */}
-              <div className="mx-auto mt-6 max-w-sm space-y-1.5">
-                <div className="flex items-center justify-between text-xs font-semibold">
-                  <span className="text-slate-500 dark:text-slate-400">Retention Strength:</span>
-                  <span className={mem.textColor}>{mem.label} ({mem.pct}%)</span>
-                </div>
-                <div className="h-2 w-full overflow-hidden rounded-full bg-slate-100 dark:bg-slate-800">
-                  <div className={`h-full rounded-full transition-all duration-500 ${mem.color}`} style={{ width: `${mem.pct}%` }} />
-                </div>
-              </div>
             </div>
 
-            {/* Deep Focus Tabs: Collocations, IELTS Examples, Synonyms & Question Context */}
-            <div className="grid grid-cols-1 gap-6 border-t border-slate-100 pt-6 dark:border-slate-800 lg:grid-cols-3">
-              {/* Collocations */}
-              <div className="rounded-2xl border border-slate-100 bg-slate-50/80 p-5 dark:border-slate-800 dark:bg-slate-850/60">
-                <div className="flex items-center gap-2">
-                  <Layers className="h-4 w-4 text-sky-600 dark:text-sky-400" />
-                  <h3 className="text-xs font-bold uppercase tracking-wider text-slate-900 dark:text-white">
-                    Essential Collocations
-                  </h3>
-                </div>
-                <p className="mt-1 text-[11px] text-slate-500 dark:text-slate-400">
-                  Cambridge academic pairings that score Band 7.5+ in Writing
+            {/* Example & Collocations Section */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 border-t border-stone-100 pt-6">
+              {/* Example Sentence */}
+              <div className="rounded-2xl border border-stone-200 bg-[#FAF9F5] p-5 space-y-2">
+                <span className="text-[10px] font-bold uppercase tracking-wider text-[#5C616B]">
+                  Example Context
+                </span>
+                <p className="font-serif text-sm font-medium italic text-[#111318] leading-relaxed">
+                  "{selectedWord.exampleSentence || 'Smartphones have become ubiquitous in modern society.'}"
                 </p>
+              </div>
 
-                <div className="mt-3 flex flex-wrap gap-1.5">
+              {/* Essential Collocations */}
+              <div className="rounded-2xl border border-stone-200 bg-[#FAF9F5] p-5 space-y-2">
+                <div className="flex items-center justify-between">
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-[#5C616B]">
+                    Academic Collocations
+                  </span>
+                  <span className="text-[10px] font-bold text-indigo-600">Band 7.5+</span>
+                </div>
+                <div className="flex flex-wrap gap-2 pt-1">
                   {(selectedWord.collocations && selectedWord.collocations.length > 0
                     ? selectedWord.collocations
-                    : ['substantial impact', 'substantial progress', 'substantial amount', 'make a substantial contribution']
+                    : ['ubiquitous presence', 'ubiquitous influence', 'become ubiquitous']
                   ).map((col, cIdx) => (
                     <span
                       key={cIdx}
-                      className="rounded-lg border border-slate-200 bg-white px-2.5 py-1 text-xs font-medium text-slate-800 shadow-2xs dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200"
+                      className="rounded-lg border border-stone-200 bg-white px-3 py-1 text-xs font-bold text-[#111318] shadow-2xs"
                     >
                       {col}
                     </span>
                   ))}
                 </div>
               </div>
-
-              {/* Synonyms & Nuances */}
-              <div className="rounded-2xl border border-slate-100 bg-slate-50/80 p-5 dark:border-slate-800 dark:bg-slate-850/60">
-                <div className="flex items-center gap-2">
-                  <Sparkles className="h-4 w-4 text-amber-500" />
-                  <h3 className="text-xs font-bold uppercase tracking-wider text-slate-900 dark:text-white">
-                    Synonyms & Register
-                  </h3>
-                </div>
-                <p className="mt-1 text-[11px] text-slate-500 dark:text-slate-400">
-                  Formal alternatives for paraphrase diversity
-                </p>
-
-                <div className="mt-3 flex flex-wrap gap-1.5">
-                  {(selectedWord.synonyms && selectedWord.synonyms.length > 0
-                    ? selectedWord.synonyms
-                    : ['considerable', 'significant', 'marked', 'noteworthy', 'sizeable']
-                  ).map((syn, sIdx) => (
-                    <span
-                      key={sIdx}
-                      className="rounded-lg border border-slate-200 bg-white px-2.5 py-1 text-xs font-medium text-slate-800 shadow-2xs dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200"
-                    >
-                      {syn}
-                    </span>
-                  ))}
-                </div>
-              </div>
-
-              {/* IELTS Exam Question Context */}
-              <div className="rounded-2xl border border-slate-100 bg-slate-50/80 p-5 dark:border-slate-800 dark:bg-slate-850/60">
-                <div className="flex items-center gap-2">
-                  <HelpCircle className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
-                  <h3 className="text-xs font-bold uppercase tracking-wider text-slate-900 dark:text-white">
-                    IELTS Question Context
-                  </h3>
-                </div>
-                <p className="mt-1 text-[11px] text-slate-500 dark:text-slate-400">
-                  How this word is tested in Cambridge prompts
-                </p>
-
-                <div className="mt-3 rounded-xl border border-emerald-200/60 bg-emerald-50/40 p-3 text-xs leading-relaxed text-slate-700 dark:border-emerald-900/40 dark:bg-emerald-950/20 dark:text-slate-300">
-                  <span className="font-bold text-emerald-800 dark:text-emerald-300">Writing Task 2 Prompt:</span>{' '}
-                  "Some argue that governments should invest a{' '}
-                  <span className="font-black text-sky-700 dark:text-sky-300 underline underline-offset-2">
-                    substantial
-                  </span>{' '}
-                  portion of their budget in public transport rather than highways."
-                </div>
-              </div>
-            </div>
-
-            {/* IELTS Sentence Example */}
-            <div className="mt-6 rounded-2xl border border-slate-200 bg-white p-5 shadow-2xs dark:border-slate-800 dark:bg-slate-850">
-              <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Academic Sentence Context</span>
-              <p className="mt-1 text-sm italic font-medium leading-relaxed text-slate-800 dark:text-slate-200">
-                "{selectedWord.sourceContext || selectedWord.exampleSentence}"
-              </p>
             </div>
           </div>
 

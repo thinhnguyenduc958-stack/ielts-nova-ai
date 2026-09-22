@@ -1,6 +1,18 @@
 export type IELTSBand = '4.0' | '4.5' | '5.0' | '5.5' | '6.0' | '6.5' | '7.0' | '7.5' | '8.0' | '8.5' | '9.0';
 
-export type IELTSSkill = 'listening' | 'reading' | 'writing' | 'speaking' | 'vocabulary' | 'grammar';
+export type IELTSSkill =
+  | 'listening'
+  | 'reading'
+  | 'writing'
+  | 'speaking'
+  | 'vocabulary'
+  | 'grammar'
+  | 'Listening'
+  | 'Reading'
+  | 'Writing'
+  | 'Speaking'
+  | 'Vocabulary'
+  | 'Grammar';
 
 export type VocabStatus = 'new' | 'learning' | 'review' | 'mastered';
 
@@ -29,6 +41,9 @@ export interface UserProfile {
   completedActivities: number;
   theme?: AppTheme;
   examDate?: string;
+  targetCountry?: string;
+  weakestSkill?: string;
+  strongestSkill?: string;
 }
 
 export interface VocabularyItem {
@@ -60,9 +75,15 @@ export type TranslationMode = 'literal' | 'natural' | 'ielts' | 'detailed';
 
 export interface TranslationResult {
   translatedText: string;
-  accuracyScore: number;
+  accuracyScore?: number;
+  confidenceScore?: number;
+  sourceLanguage?: string;
+  targetLanguage?: string;
+  detectedLanguage?: string;
+  academicRegisterBand?: string;
+  suggestedIELTSVocabulary?: Array<{ word: string; definition: string }>;
   ieltsCollocations?: string[];
-  verificationSteps: { stepNumber: number; stepName: string; status: 'passed' | 'checked'; details: string }[];
+  verificationSteps?: { stepNumber: number; stepName: string; status: 'passed' | 'checked'; details: string }[];
   usUkNotes?: string;
 }
 
@@ -81,27 +102,47 @@ export interface TranslationVerification {
 
 export interface WritingEvaluation {
   overallBand: number;
-  bandRange: string;
-  disclaimer: string;
-  criteria: {
-    taskResponse: { band: number; feedback: string; strengths: string[]; weaknesses: string[] };
-    coherenceCohesion: { band: number; feedback: string; strengths: string[]; weaknesses: string[] };
-    lexicalResource: { band: number; feedback: string; recommendedWords: string[]; repetitiveWords: string[] };
-    grammaticalRange: { band: number; feedback: string; corrections: { original: string; corrected: string; explanation: string }[] };
+  bandRange?: string;
+  disclaimer?: string;
+  // Flattened properties used by WritingModule
+  taskAchievement?: number;
+  taskAchievementFeedback?: string;
+  coherenceCohesion?: any;
+  coherenceFeedback?: string;
+  lexicalResource?: any;
+  lexicalFeedback?: string;
+  grammaticalRange?: any;
+  grammarFeedback?: string;
+  improvedVersion?: string;
+  suggestedVocabulary?: Array<{ word: string; pos?: string; meaning: string; context?: string }>;
+  // Structured criteria from server
+  criteria?: {
+    taskResponse?: { band: number; feedback: string; strengths?: string[]; weaknesses?: string[] };
+    coherenceCohesion?: { band: number; feedback: string; strengths?: string[]; weaknesses?: string[] };
+    lexicalResource?: { band: number; feedback: string; recommendedWords?: string[]; repetitiveWords?: string[] };
+    grammaticalRange?: { band: number; feedback: string; corrections?: { original: string; corrected: string; explanation: string }[] };
   };
-  sentenceImprovements: { original: string; improved: string; reason: string }[];
-  modelExcerpt: string;
-  suggestedVocabToSave: { word: string; pos: string; meaning: string; context: string }[];
+  sentenceImprovements?: { original: string; improved: string; reason: string }[];
+  modelExcerpt?: string;
+  suggestedVocabToSave?: { word: string; pos: string; meaning: string; context: string }[];
 }
 
 export interface SpeakingEvaluation {
   overallBand: number;
-  bandRange: string;
-  fluencyCoherence: { band: number; feedback: string };
-  lexicalResource: { band: number; feedback: string; goodPhrases: string[]; betterAlternatives: string[] };
-  grammaticalAccuracy: { band: number; feedback: string; corrections: { spoken: string; corrected: string; reason: string }[] };
-  pronunciationNotes: string;
-  modelAnswerSnippet: string;
+  bandRange?: string;
+  // Flattened properties used by SpeakingModule
+  fluencyCoherence: any;
+  fluencyFeedback?: string;
+  lexicalResource: any;
+  lexicalFeedback?: string;
+  grammaticalRange?: any;
+  grammaticalAccuracy?: any;
+  grammarFeedback?: string;
+  pronunciation?: any;
+  pronunciationFeedback?: string;
+  pronunciationNotes?: string;
+  modelAnswerSnippet?: string;
+  improvedResponse?: string;
 }
 
 export interface ReadingQuestion {

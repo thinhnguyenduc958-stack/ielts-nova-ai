@@ -9,24 +9,183 @@ import {
   EnglishVariant,
 } from '../types';
 
+export interface TutorChatOptions {
+  messages: Array<{ role: string; content?: string; text?: string }>;
+  userBand?: string;
+  targetBand?: string;
+  languagePreference?: string;
+  mode?: string;
+  task?: string;
+  persona?: string;
+  sessionContext?: string;
+}
+
 export const apiService = {
-  async tutorChat(messages: TutorChatMessage[], userBand: string, targetBand: string, languagePreference: string) {
+  async getDiagnostics() {
+    try {
+      const res = await fetch('/api/gemini/diagnostics');
+      if (!res.ok) throw new Error('Diagnostics fetch failed');
+      return (await res.json()) as {
+        status: string;
+        configured: boolean;
+        model: string;
+        reachable: boolean;
+        testPingStatus: string;
+        latencyMs: number;
+        error: string | null;
+        timestamp: string;
+      };
+    } catch (err: any) {
+      return {
+        status: 'error',
+        configured: false,
+        model: 'unknown',
+        reachable: false,
+        testPingStatus: 'ERROR',
+        latencyMs: 0,
+        error: err?.message || 'Failed to reach diagnostics endpoint',
+        timestamp: new Date().toISOString(),
+      };
+    }
+  },
+
+  async tutorChat(options: TutorChatOptions, signal?: AbortSignal) {
     const res = await fetch('/api/gemini/tutor', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ messages, userBand, targetBand, languagePreference }),
+      body: JSON.stringify(options),
+      signal,
     });
-    if (!res.ok) throw new Error('Failed to get tutor response');
-    return res.json() as Promise<{ text: string; fallback: boolean }>;
+    if (!res.ok) {
+      let errData: any = {};
+      try {
+        errData = await res.json();
+      } catch {}
+      throw new Error(errData.error || 'Failed to get tutor response');
+    }
+    return res.json() as Promise<{
+      text: string;
+      fallback: boolean;
+      modelUsed?: string;
+      latencyMs?: number;
+    }>;
   },
 
-  async askAITutor(text: string, history: { role: string; content: string }[] = []) {
+  async tutorChatStream(
+    options: TutorChatOptions,
+    callbacks: {
+      onChunk: (chunk: string) => void;
+      onDone: (fullText: string, meta: { modelUsed?: string; latencyMs?: number }) => void;
+      onError: (error: { message: string; code?: string }) => void;
+    },
+    signal?: AbortSignal
+  ) {
+    try {
+      const res = await fetch('/api/gemini/tutor/stream', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(options),
+        signal,
+      });
+
+      if (!res.ok) {
+        let errData: any = {};
+        try {
+          errData = await res.json();
+        } catch {}
+        callbacks.onError({
+          message: errData.error || 'NOVA is currently unavailable. Please try again.',
+          code: errData.code || 'HTTP_ERROR',
+        });
+        return;
+      }
+
+      const reader = res.body?.getReader();
+      if (!reader) {
+        throw new Error('ReadableStream not supported by browser.');
+      }
+
+      const decoder = new TextDecoder('utf-8');
+      let buffer = '';
+      let accumulatedText = '';
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+
+        buffer += decoder.decode(value, { stream: true });
+        const lines = buffer.split('\n');
+        buffer = lines.pop() || '';
+
+        for (const line of lines) {
+          const trimmed = line.trim();
+          if (!trimmed.startsWith('data:')) continue;
+          const jsonStr = trimmed.replace(/^data:\s*/, '');
+          if (!jsonStr) continue;
+
+          try {
+            const data = JSON.parse(jsonStr);
+            if (data.chunk) {
+              accumulatedText += data.chunk;
+              callbacks.onChunk(data.chunk);
+            }
+            if (data.done) {
+              callbacks.onDone(data.fullText || accumulatedText, {
+                modelUsed: data.modelUsed,
+                latencyMs: data.latencyMs,
+              });
+              return;
+            }
+            if (data.error) {
+              callbacks.onError({ message: data.error, code: data.code });
+              return;
+            }
+          } catch (parseErr) {
+            console.warn('Failed to parse SSE line:', jsonStr, parseErr);
+          }
+        }
+      }
+
+      // If stream finished without explicit done event
+      callbacks.onDone(accumulatedText, {});
+    } catch (err: any) {
+      if (signal?.aborted || err?.name === 'AbortError') {
+        // Clean user cancellation via Stop button
+        return;
+      }
+      callbacks.onError({
+        message: "NOVA couldn't connect right now. Please check your connection and try again.",
+        code: 'NETWORK_ERROR',
+      });
+    }
+  },
+
+  async askAITutor(
+    text: string,
+    history: { role: string; content: string }[] = [],
+    options: {
+      userBand?: string;
+      targetBand?: string;
+      languagePreference?: string;
+      mode?: string;
+      persona?: string;
+      sessionContext?: string;
+    } = {}
+  ) {
     const formattedMessages = [
-      ...history.map((h, i) => ({ id: `${i}`, role: h.role as any, text: h.content, timestamp: '' })),
-      { id: 'new', role: 'user' as const, text, timestamp: '' },
+      ...history.map((h, i) => ({ id: `${i}`, role: h.role, text: h.content, timestamp: '' })),
+      { id: 'new', role: 'user', text, timestamp: '' },
     ];
-    const res = await this.tutorChat(formattedMessages, '6.5', '7.5', 'bilingual');
-    return { reply: res.text };
+    const res = await this.tutorChat({
+      messages: formattedMessages,
+      userBand: options.userBand || '6.0',
+      targetBand: options.targetBand || '7.5',
+      languagePreference: options.languagePreference || 'bilingual',
+      mode: options.mode,
+      persona: options.persona,
+      sessionContext: options.sessionContext,
+    });
+    return { reply: res.text, modelUsed: res.modelUsed };
   },
 
   async translateWithVerification(text: string, sourceLang: string, targetLang: string, mode: string) {

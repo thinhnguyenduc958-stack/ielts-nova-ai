@@ -41,6 +41,7 @@ interface AppContextType {
   vocabulary: VocabularyItem[];
   addVocabulary: (item: Partial<VocabularyItem> & { word: string; meaning: string }) => void;
   updateVocabStatus: (id: string, status: VocabStatus) => void;
+  updateVocabularyStatus: (id: string, status: VocabStatus) => void;
   updateVocabNotes: (id: string, notes: string) => void;
   deleteVocabulary: (id: string) => void;
   recentActivities: ActivityItem[];
@@ -285,6 +286,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         vocabulary,
         addVocabulary,
         updateVocabStatus,
+        updateVocabularyStatus: updateVocabStatus,
         updateVocabNotes,
         deleteVocabulary,
         recentActivities,

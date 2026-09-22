@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
+import Markdown from 'react-markdown';
 import { useApp } from '../context/AppContext';
-import { apiService } from '../services/apiService';
+import { apiService, TutorChatOptions } from '../services/apiService';
 import { NovaSymbol } from './NovaLogo';
 import { NovaOrb } from './NovaOrb';
 import { NovaVoiceDialog } from './NovaVoiceDialog';
@@ -18,16 +19,35 @@ import {
   ChevronDown,
   ChevronUp,
   Mic,
+  Square,
+  Copy,
+  Check,
+  AlertCircle,
+  Activity,
+  Layers,
+  BookOpen,
+  PenTool,
+  MessageSquare,
+  Wand2,
 } from 'lucide-react';
 
-type TutorPersona = 'examiner' | 'study_buddy' | 'grammar_doctor' | 'vocab_coach';
+export type TutorPersona = 'examiner' | 'study_buddy' | 'grammar_doctor' | 'vocab_coach';
+export type TutorLearningMode = 'auto' | 'speaking' | 'writing' | 'reading' | 'vocab' | 'grammar';
 
-interface ChatMessage {
+export interface ChatMessage {
   id: string;
   role: 'user' | 'assistant';
   content: string;
   timestamp: string;
   persona?: TutorPersona;
+  mode?: string;
+  modelUsed?: string;
+  latencyMs?: number;
+  isStreaming?: boolean;
+  error?: {
+    message: string;
+    code?: string;
+  };
   corrections?: {
     original: string;
     improved: string;
@@ -72,11 +92,25 @@ const PERSONAS: {
   },
 ];
 
+const LEARNING_MODES: {
+  id: TutorLearningMode;
+  name: string;
+  icon: React.FC<{ className?: string }>;
+}[] = [
+  { id: 'auto', name: 'Smart Auto', icon: Wand2 },
+  { id: 'speaking', name: 'Speaking', icon: Mic },
+  { id: 'writing', name: 'Writing', icon: PenTool },
+  { id: 'reading', name: 'Reading', icon: BookOpen },
+  { id: 'vocab', name: 'Vocabulary', icon: GraduationCap },
+  { id: 'grammar', name: 'Grammar', icon: Stethoscope },
+];
+
 const QUICK_ACTION_PROMPTS = [
-  'Explain why option B was incorrect in Reading',
-  'Give me Band 8 synonyms for "crucial" and "problem"',
-  'Check my Task 2 thesis statement for coherence',
-  'Practice Speaking Part 1 questions on Hometown',
+  'Explain the Present Perfect tense with IELTS Band 7+ examples',
+  'Give me Band 8 synonyms and collocations for "crucial" and "problem"',
+  "Let's practice Speaking Part 1 questions on Hometown",
+  'Check my Task 2 thesis statement for cohesion and lexical range',
+  'Giải thích sự khác biệt giữa Band 6 và Band 7 môn Speaking',
 ];
 
 const getInitialGreeting = (targetBand: string): ChatMessage[] => [
@@ -84,8 +118,9 @@ const getInitialGreeting = (targetBand: string): ChatMessage[] => [
     id: 'welcome',
     role: 'assistant',
     persona: 'examiner',
-    content: `Hello! I am your Cambridge-aligned **NOVA AI IELTS Mentor**, calibrated to your goal of **Band ${targetBand}**. Which question, prompt, or linguistic structure would you like to master today?`,
+    content: `Hello! I am your Cambridge-calibrated **NOVA AI IELTS Mentor**, tuned to your target of **Band ${targetBand}**.\n\nYou can ask me grammar questions, share essay drafts, practice Speaking prompts, or ask for explanations in **English** or **Tiếng Việt**. What would you like to master today?`,
     timestamp: 'Just now',
+    modelUsed: 'gemini-3.1-flash-lite',
   },
 ];
 
@@ -96,92 +131,227 @@ export const AITutorModule: React.FC = () => {
     getInitialGreeting(userProfile.targetBand)
   );
   const [inputText, setInputText] = useState('');
-  const [loading, setLoading] = useState(false);
+  const [isStreaming, setIsStreaming] = useState(false);
   const [activePersona, setActivePersona] = useState<TutorPersona>('examiner');
+  const [activeMode, setActiveMode] = useState<TutorLearningMode>('auto');
   const [langPreference, setLangPreference] = useState<'bilingual' | 'english' | 'vietnamese'>('bilingual');
   const [expandedCorrections, setExpandedCorrections] = useState<Record<string, boolean>>({});
   const [isVoiceOpen, setIsVoiceOpen] = useState(false);
+  const [copiedId, setCopiedId] = useState<string | null>(null);
+
+  // Diagnostics info
+  const [showDiagModal, setShowDiagModal] = useState(false);
+  const [diagData, setDiagData] = useState<{
+    status: string;
+    configured: boolean;
+    model: string;
+    reachable: boolean;
+    latencyMs: number;
+    error: string | null;
+  } | null>(null);
+  const [diagLoading, setDiagLoading] = useState(false);
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const abortControllerRef = useRef<AbortController | null>(null);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [messages, loading]);
+  }, [messages, isStreaming]);
 
   const toggleCorrection = (msgId: string) => {
     setExpandedCorrections((prev) => ({ ...prev, [msgId]: !prev[msgId] }));
   };
 
-  const handleSendMessage = async (textToSend?: string) => {
-    const text = textToSend || inputText;
-    if (!text.trim() || loading) return;
-
-    const userMsg: ChatMessage = {
-      id: Date.now().toString(),
-      role: 'user',
-      content: text,
-      timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-    };
-
-    setMessages((prev) => [...prev, userMsg]);
-    if (!textToSend) setInputText('');
-    setLoading(true);
-
+  const copyToClipboard = async (id: string, text: string) => {
     try {
-      const history = messages.map((m) => ({ role: m.role, content: m.content }));
-      const promptWithPersona = `[Persona: ${activePersona} - ${
-        PERSONAS.find((p) => p.id === activePersona)?.tone
-      }]. ${text} (Explain in ${langPreference} format, tailored for someone targeting IELTS Band ${userProfile.targetBand})`;
-
-      const response = await apiService.askAITutor(promptWithPersona, history);
-
-      const botMsg: ChatMessage = {
-        id: (Date.now() + 1).toString(),
-        role: 'assistant',
-        persona: activePersona,
-        content: response.reply,
-        timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-        corrections:
-          text.toLowerCase().includes('check') || text.toLowerCase().includes('thesis')
-            ? {
-                original: text,
-                improved:
-                  'While some contend that technological disruption eliminates employment, I maintain that it primarily cultivates specialized vocations.',
-                explanation:
-                  'Incorporates concession clause ("While some contend...") and academic collocation ("cultivates specialized vocations").',
-              }
-            : undefined,
-      };
-
-      setMessages((prev) => [...prev, botMsg]);
+      await navigator.clipboard.writeText(text);
+      setCopiedId(id);
+      setTimeout(() => setCopiedId(null), 2000);
     } catch {
-      showToast('Tutor response interrupted. Please verify connection.');
-    } finally {
-      setLoading(false);
+      showToast('Copied to clipboard');
     }
   };
 
+  const handleStopGeneration = () => {
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+      abortControllerRef.current = null;
+    }
+    setIsStreaming(false);
+    setMessages((prev) =>
+      prev.map((msg) => (msg.isStreaming ? { ...msg, isStreaming: false } : msg))
+    );
+  };
+
+  const handleFetchDiagnostics = async () => {
+    setDiagLoading(true);
+    setShowDiagModal(true);
+    try {
+      const res = await apiService.getDiagnostics();
+      setDiagData(res);
+    } catch (err: any) {
+      setDiagData({
+        status: 'error',
+        configured: false,
+        model: 'unknown',
+        reachable: false,
+        latencyMs: 0,
+        error: err?.message || 'Failed to ping Gemini backend',
+      });
+    } finally {
+      setDiagLoading(false);
+    }
+  };
+
+  const handleSendMessage = async (textToSend?: string, isRetry = false) => {
+    const text = (textToSend || inputText).trim();
+    if (!text || isStreaming) return;
+
+    // Abort previous if any
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+    }
+    const abortController = new AbortController();
+    abortControllerRef.current = abortController;
+
+    const userMsgId = Date.now().toString();
+    const assistantMsgId = (Date.now() + 1).toString();
+
+    let updatedMessages: ChatMessage[];
+
+    if (isRetry) {
+      // Remove previous failed assistant message
+      updatedMessages = messages.filter((m) => !m.error);
+    } else {
+      const userMsg: ChatMessage = {
+        id: userMsgId,
+        role: 'user',
+        content: text,
+        timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+      };
+      updatedMessages = [...messages, userMsg];
+      setInputText('');
+    }
+
+    // Add assistant placeholder
+    const assistantPlaceholder: ChatMessage = {
+      id: assistantMsgId,
+      role: 'assistant',
+      persona: activePersona,
+      mode: activeMode,
+      content: '',
+      timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+      isStreaming: true,
+    };
+
+    setMessages([...updatedMessages, assistantPlaceholder]);
+    setIsStreaming(true);
+
+    // Prepare history payload for API
+    const historyPayload = updatedMessages.map((m) => ({
+      role: m.role,
+      content: m.content,
+    }));
+
+    const options: TutorChatOptions = {
+      messages: historyPayload,
+      userBand: userProfile.currentBand || '6.0',
+      targetBand: userProfile.targetBand || '7.5',
+      languagePreference: langPreference,
+      mode: activeMode === 'auto' ? undefined : activeMode,
+      persona: activePersona,
+      sessionContext: `User is studying on IELTS NOVA AI. Target Band is ${userProfile.targetBand}.`,
+    };
+
+    let accumulatedText = '';
+
+    await apiService.tutorChatStream(
+      options,
+      {
+        onChunk: (chunk: string) => {
+          accumulatedText += chunk;
+          setMessages((prev) =>
+            prev.map((msg) =>
+              msg.id === assistantMsgId
+                ? { ...msg, content: accumulatedText }
+                : msg
+            )
+          );
+        },
+        onDone: (fullText: string, meta) => {
+          setIsStreaming(false);
+          abortControllerRef.current = null;
+          setMessages((prev) =>
+            prev.map((msg) =>
+              msg.id === assistantMsgId
+                ? {
+                    ...msg,
+                    content: fullText || accumulatedText,
+                    isStreaming: false,
+                    modelUsed: meta.modelUsed,
+                    latencyMs: meta.latencyMs,
+                  }
+                : msg
+            )
+          );
+        },
+        onError: (err) => {
+          setIsStreaming(false);
+          abortControllerRef.current = null;
+          setMessages((prev) =>
+            prev.map((msg) =>
+              msg.id === assistantMsgId
+                ? {
+                    ...msg,
+                    isStreaming: false,
+                    error: {
+                      message: err.message,
+                      code: err.code,
+                    },
+                  }
+                : msg
+            )
+          );
+        },
+      },
+      abortController.signal
+    );
+  };
+
   const handleResetChat = () => {
+    if (isStreaming) {
+      handleStopGeneration();
+    }
     setMessages(getInitialGreeting(userProfile.targetBand));
   };
 
   return (
     <div className="mx-auto max-w-4xl space-y-6 pb-24 text-[#111318] dark:text-[#F3F4F6]">
-      {/* SECTION 22: ELEGANT CONVERSATIONAL HEADER */}
+      {/* SECTION: ELEGANT CONVERSATIONAL HEADER */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-stone-200/80 pb-5 dark:border-stone-800">
         <div className="flex items-center gap-3.5">
-          <NovaOrb size="sm" state={loading ? 'thinking' : 'idle'} />
+          <NovaOrb size="sm" state={isStreaming ? 'thinking' : 'idle'} />
           <div>
-            <span className="text-[10px] font-bold uppercase tracking-widest text-indigo-600 dark:text-indigo-400 block">
-              CONVERSATIONAL INTELLIGENCE
-            </span>
+            <div className="flex items-center gap-2">
+              <span className="text-[10px] font-bold uppercase tracking-widest text-indigo-600 dark:text-indigo-400 block">
+                NOVA AI TUTOR CORE V4
+              </span>
+              <button
+                onClick={handleFetchDiagnostics}
+                className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2 py-0.5 text-[9px] font-bold text-emerald-700 hover:bg-emerald-100 dark:bg-emerald-950/60 dark:text-emerald-300 transition-colors"
+                title="View AI Diagnostics"
+              >
+                <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                <span>Active</span>
+              </button>
+            </div>
             <h1 className="text-2xl sm:text-3xl font-black tracking-tight text-[#111318] dark:text-white uppercase">
-              NOVA AI Tutor
+              NOVA AI Mentor
             </h1>
           </div>
         </div>
 
-        <div className="flex items-center gap-2 self-start sm:self-auto">
+        <div className="flex flex-wrap items-center gap-2 self-start sm:self-auto">
           {/* Instant Voice Option */}
           <button
             onClick={() => setIsVoiceOpen(true)}
@@ -191,6 +361,7 @@ export const AITutorModule: React.FC = () => {
             <span>Voice Mode</span>
           </button>
 
+          {/* Language preference dropdown */}
           <select
             value={langPreference}
             onChange={(e) => setLangPreference(e.target.value as any)}
@@ -202,6 +373,7 @@ export const AITutorModule: React.FC = () => {
             <option value="vietnamese">Tiếng Việt</option>
           </select>
 
+          {/* Reset chat button */}
           <button
             onClick={handleResetChat}
             className="flex h-8 w-8 items-center justify-center rounded-xl border border-stone-200 bg-white text-[#5F6368] hover:text-[#111318] hover:bg-stone-50 dark:border-stone-800 dark:bg-stone-900 dark:text-stone-400 dark:hover:text-white transition-colors"
@@ -211,6 +383,31 @@ export const AITutorModule: React.FC = () => {
             <RotateCcw className="h-3.5 w-3.5" />
           </button>
         </div>
+      </div>
+
+      {/* Mode Bar (Smart Auto, Speaking, Writing, Reading, Vocab, Grammar) */}
+      <div className="flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-none">
+        <span className="text-[10px] font-bold uppercase tracking-wider text-[#5F6368] dark:text-stone-400 shrink-0 mr-1 flex items-center gap-1">
+          <Layers className="h-3 w-3" /> Focus:
+        </span>
+        {LEARNING_MODES.map((mode) => {
+          const Icon = mode.icon;
+          const isSelected = activeMode === mode.id;
+          return (
+            <button
+              key={mode.id}
+              onClick={() => setActiveMode(mode.id)}
+              className={`inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1 text-xs font-semibold transition-all shrink-0 ${
+                isSelected
+                  ? 'bg-indigo-600 text-white shadow-2xs'
+                  : 'bg-stone-100 text-[#5F6368] hover:bg-stone-200 dark:bg-stone-800 dark:text-stone-300 dark:hover:bg-stone-700'
+              }`}
+            >
+              <Icon className="h-3 w-3" />
+              <span>{mode.name}</span>
+            </button>
+          );
+        })}
       </div>
 
       {/* Persona Selection Pills */}
@@ -261,16 +458,17 @@ export const AITutorModule: React.FC = () => {
           <button
             key={idx}
             onClick={() => handleSendMessage(p)}
-            className="shrink-0 inline-flex items-center gap-1.5 rounded-full border border-stone-200 bg-white px-3 py-1 text-xs text-[#5F6368] hover:border-indigo-200 hover:text-indigo-600 dark:border-stone-800 dark:bg-stone-900 dark:text-stone-300 transition-colors"
+            disabled={isStreaming}
+            className="shrink-0 inline-flex items-center gap-1.5 rounded-full border border-stone-200 bg-white px-3 py-1 text-xs text-[#5F6368] hover:border-indigo-200 hover:text-indigo-600 dark:border-stone-800 dark:bg-stone-900 dark:text-stone-300 transition-colors disabled:opacity-50"
           >
-            <Lightbulb className="h-3 w-3 text-amber-500" />
-            <span>{p}</span>
+            <Lightbulb className="h-3 w-3 text-amber-500 shrink-0" />
+            <span className="truncate max-w-xs">{p}</span>
           </button>
         ))}
       </div>
 
       {/* Large Centered Dialogue Area */}
-      <div className="flex h-[540px] flex-col rounded-2xl border border-stone-200/90 bg-white shadow-xs dark:border-stone-800 dark:bg-stone-900 overflow-hidden">
+      <div className="flex h-[560px] flex-col rounded-2xl border border-stone-200/90 bg-white shadow-xs dark:border-stone-800 dark:bg-stone-900 overflow-hidden">
         <div className="flex-1 overflow-y-auto p-5 sm:p-6 space-y-5">
           {messages.map((msg) => {
             const isUser = msg.role === 'user';
@@ -293,7 +491,7 @@ export const AITutorModule: React.FC = () => {
                 </div>
 
                 {/* Message Bubble */}
-                <div className="max-w-[85%] sm:max-w-[80%] space-y-2">
+                <div className="max-w-[85%] sm:max-w-[82%] space-y-2">
                   <div
                     className={`rounded-2xl p-4 text-xs sm:text-sm leading-relaxed ${
                       isUser
@@ -301,31 +499,90 @@ export const AITutorModule: React.FC = () => {
                         : 'border border-stone-200/80 bg-white text-[#111318] shadow-2xs dark:border-stone-800 dark:bg-stone-900 dark:text-stone-100'
                     }`}
                   >
-                    {!isUser && personaObj && (
+                    {!isUser && (
                       <div className="mb-2 flex items-center justify-between border-b border-stone-100 pb-1.5 dark:border-stone-800">
-                        <span className="text-[10px] font-bold uppercase tracking-wider text-indigo-600 dark:text-indigo-400">
-                          {personaObj.name}
-                        </span>
+                        <div className="flex items-center gap-2">
+                          <span className="text-[10px] font-bold uppercase tracking-wider text-indigo-600 dark:text-indigo-400">
+                            {personaObj?.name || 'NOVA AI'}
+                          </span>
+                          {msg.modelUsed && (
+                            <span className="rounded bg-stone-100 px-1.5 py-0.5 text-[9px] font-medium text-stone-500 dark:bg-stone-800 dark:text-stone-400">
+                              {msg.modelUsed}
+                            </span>
+                          )}
+                          {msg.latencyMs && (
+                            <span className="text-[9px] text-stone-400">
+                              {(msg.latencyMs / 1000).toFixed(1)}s
+                            </span>
+                          )}
+                        </div>
                         <span className="text-[10px] text-[#5F6368] dark:text-stone-500">
                           {msg.timestamp}
                         </span>
                       </div>
                     )}
 
-                    <div className="whitespace-pre-wrap leading-relaxed text-[#111318] dark:text-stone-100">
-                      {msg.content}
-                    </div>
+                    {/* Content / Markdown / Stream */}
+                    {msg.error ? (
+                      <div className="space-y-2 py-1">
+                        <div className="flex items-center gap-2 text-rose-600 dark:text-rose-400 font-semibold text-xs">
+                          <AlertCircle className="h-4 w-4 shrink-0" />
+                          <span>{msg.error.message}</span>
+                        </div>
+                        <button
+                          onClick={() => handleSendMessage(undefined, true)}
+                          className="inline-flex items-center gap-1.5 rounded-lg bg-rose-50 px-2.5 py-1 text-xs font-bold text-rose-700 hover:bg-rose-100 dark:bg-rose-950 dark:text-rose-300 transition-colors"
+                        >
+                          <RotateCcw className="h-3 w-3" />
+                          <span>Retry question</span>
+                        </button>
+                      </div>
+                    ) : (
+                      <div className="prose prose-sm dark:prose-invert max-w-none text-[#111318] dark:text-stone-100 leading-relaxed space-y-2">
+                        {isUser ? (
+                          <p className="whitespace-pre-wrap">{msg.content}</p>
+                        ) : (
+                          <>
+                            <div className="markdown-content">
+                              <Markdown>{msg.content || (msg.isStreaming ? '...' : '')}</Markdown>
+                            </div>
+                            {msg.isStreaming && (
+                              <span className="inline-block h-3.5 w-1.5 bg-indigo-600 animate-pulse ml-1 align-middle rounded-xs" />
+                            )}
+                          </>
+                        )}
+                      </div>
+                    )}
 
-                    {!isUser && (
+                    {/* Action buttons (Listen, Copy) */}
+                    {!isUser && !msg.error && msg.content && (
                       <div className="mt-3 flex items-center justify-between border-t border-stone-100 pt-2 text-[11px] text-[#5F6368] dark:border-stone-800">
                         <button
                           onClick={() =>
-                            apiService.speakText(msg.content.replace(/[*_#]/g, ''), 'UK')
+                            apiService.speakText(msg.content.replace(/[*_#`]/g, ''), 'UK')
                           }
                           className="flex items-center gap-1.5 font-semibold text-indigo-600 hover:underline dark:text-indigo-400"
                         >
                           <Volume2 className="h-3.5 w-3.5" />
-                          <span>Listen audio</span>
+                          <span>Listen (UK)</span>
+                        </button>
+
+                        <button
+                          onClick={() => copyToClipboard(msg.id, msg.content)}
+                          className="flex items-center gap-1 text-[#5F6368] hover:text-[#111318] dark:hover:text-stone-200 transition-colors"
+                          title="Copy text"
+                        >
+                          {copiedId === msg.id ? (
+                            <>
+                              <Check className="h-3 w-3 text-emerald-600" />
+                              <span className="text-[10px] text-emerald-600">Copied</span>
+                            </>
+                          ) : (
+                            <>
+                              <Copy className="h-3 w-3" />
+                              <span className="text-[10px]">Copy</span>
+                            </>
+                          )}
                         </button>
                       </div>
                     )}
@@ -370,13 +627,6 @@ export const AITutorModule: React.FC = () => {
             );
           })}
 
-          {loading && (
-            <div className="flex items-center gap-2 text-xs text-[#5F6368] dark:text-stone-400">
-              <Loader2 className="h-3.5 w-3.5 animate-spin text-indigo-600 dark:text-indigo-400" />
-              <span>NOVA is thinking and aligning with Cambridge descriptors...</span>
-            </div>
-          )}
-
           <div ref={messagesEndRef} />
         </div>
 
@@ -393,10 +643,13 @@ export const AITutorModule: React.FC = () => {
               type="text"
               value={inputText}
               onChange={(e) => setInputText(e.target.value)}
-              placeholder={`Ask ${
-                PERSONAS.find((p) => p.id === activePersona)?.name
-              } about target Band ${userProfile.targetBand}...`}
-              className="flex-1 rounded-xl border border-stone-200/90 bg-white px-4 py-2.5 text-xs sm:text-sm text-[#111318] placeholder:text-[#5F6368] focus:border-indigo-600 focus:outline-hidden dark:border-stone-800 dark:bg-stone-900 dark:text-stone-100"
+              placeholder={
+                isStreaming
+                  ? 'NOVA is generating response...'
+                  : `Ask ${PERSONAS.find((p) => p.id === activePersona)?.name} about Band ${userProfile.targetBand}...`
+              }
+              disabled={isStreaming}
+              className="flex-1 rounded-xl border border-stone-200/90 bg-white px-4 py-2.5 text-xs sm:text-sm text-[#111318] placeholder:text-[#5F6368] focus:border-indigo-600 focus:outline-hidden dark:border-stone-800 dark:bg-stone-900 dark:text-stone-100 disabled:bg-stone-50 dark:disabled:bg-stone-850"
             />
 
             {/* Instant Voice Trigger */}
@@ -410,17 +663,109 @@ export const AITutorModule: React.FC = () => {
               <Mic className="h-4 w-4" />
             </button>
 
-            <button
-              type="submit"
-              disabled={loading || !inputText.trim()}
-              className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-indigo-600 text-white shadow-xs hover:bg-indigo-700 disabled:opacity-30 transition-all"
-              aria-label="Send message"
-            >
-              <Send className="h-4 w-4" />
-            </button>
+            {/* Send or Stop button */}
+            {isStreaming ? (
+              <button
+                type="button"
+                onClick={handleStopGeneration}
+                className="flex h-10 px-3.5 items-center justify-center gap-1.5 rounded-xl bg-stone-900 text-white shadow-xs hover:bg-stone-800 dark:bg-stone-100 dark:text-stone-900 transition-all font-semibold text-xs"
+                title="Stop generation"
+                aria-label="Stop generation"
+              >
+                <Square className="h-3.5 w-3.5 fill-current" />
+                <span className="hidden sm:inline">Stop</span>
+              </button>
+            ) : (
+              <button
+                type="submit"
+                disabled={!inputText.trim()}
+                className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-indigo-600 text-white shadow-xs hover:bg-indigo-700 disabled:opacity-30 transition-all"
+                aria-label="Send message"
+              >
+                <Send className="h-4 w-4" />
+              </button>
+            )}
           </form>
         </div>
       </div>
+
+      {/* Diagnostics Modal */}
+      {showDiagModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-xs p-4">
+          <div className="w-full max-w-md rounded-2xl border border-stone-200 bg-white p-6 shadow-xl dark:border-stone-800 dark:bg-stone-900">
+            <div className="flex items-center justify-between pb-3 border-b border-stone-100 dark:border-stone-800">
+              <div className="flex items-center gap-2">
+                <Activity className="h-5 w-5 text-indigo-600 dark:text-indigo-400" />
+                <h3 className="font-bold text-sm text-[#111318] dark:text-white">
+                  NOVA AI System Diagnostics
+                </h3>
+              </div>
+              <button
+                onClick={() => setShowDiagModal(false)}
+                className="rounded-lg p-1 text-stone-400 hover:text-stone-600 dark:hover:text-stone-200"
+              >
+                ✕
+              </button>
+            </div>
+
+            <div className="py-4 space-y-3 text-xs">
+              {diagLoading ? (
+                <div className="flex items-center justify-center py-6 gap-2 text-stone-500">
+                  <Loader2 className="h-4 w-4 animate-spin text-indigo-600" />
+                  <span>Pinging Gemini infrastructure...</span>
+                </div>
+              ) : diagData ? (
+                <>
+                  <div className="flex items-center justify-between rounded-lg bg-stone-50 p-2.5 dark:bg-stone-800">
+                    <span className="text-stone-500">API Key Configured:</span>
+                    <span className={`font-bold ${diagData.configured ? 'text-emerald-600' : 'text-rose-500'}`}>
+                      {diagData.configured ? 'Valid (Server Secret)' : 'Missing'}
+                    </span>
+                  </div>
+                  <div className="flex items-center justify-between rounded-lg bg-stone-50 p-2.5 dark:bg-stone-800">
+                    <span className="text-stone-500">Active Model:</span>
+                    <span className="font-mono font-bold text-indigo-600 dark:text-indigo-400">
+                      {diagData.model}
+                    </span>
+                  </div>
+                  <div className="flex items-center justify-between rounded-lg bg-stone-50 p-2.5 dark:bg-stone-800">
+                    <span className="text-stone-500">Reachability:</span>
+                    <span className={`font-bold ${diagData.reachable ? 'text-emerald-600' : 'text-rose-500'}`}>
+                      {diagData.reachable ? 'Reachable (OK)' : 'Unreachable'}
+                    </span>
+                  </div>
+                  <div className="flex items-center justify-between rounded-lg bg-stone-50 p-2.5 dark:bg-stone-800">
+                    <span className="text-stone-500">Roundtrip Latency:</span>
+                    <span className="font-semibold text-stone-700 dark:text-stone-200">
+                      {diagData.latencyMs} ms
+                    </span>
+                  </div>
+                  {diagData.error && (
+                    <div className="rounded-lg bg-rose-50 p-2.5 text-rose-700 dark:bg-rose-950 dark:text-rose-300">
+                      <span className="font-bold">Error:</span> {diagData.error}
+                    </div>
+                  )}
+                </>
+              ) : null}
+            </div>
+
+            <div className="flex justify-end gap-2 pt-2">
+              <button
+                onClick={handleFetchDiagnostics}
+                className="rounded-xl border border-stone-200 px-3 py-1.5 text-xs font-semibold text-stone-700 hover:bg-stone-50 dark:border-stone-700 dark:text-stone-300 dark:hover:bg-stone-800"
+              >
+                Re-test
+              </button>
+              <button
+                onClick={() => setShowDiagModal(false)}
+                className="rounded-xl bg-indigo-600 px-4 py-1.5 text-xs font-bold text-white hover:bg-indigo-700"
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Voice Companion Dialog */}
       <NovaVoiceDialog isOpen={isVoiceOpen} onClose={() => setIsVoiceOpen(false)} />

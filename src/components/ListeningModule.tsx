@@ -11,13 +11,15 @@ import {
   XCircle,
   Clock,
   FileAudio,
+  MapPin,
+  Sparkles,
 } from 'lucide-react';
 
 const SECTIONS = [
-  { num: 1, title: 'Section 1', desc: 'Social / Transactional Dialogue', badge: 'Everyday' },
-  { num: 2, title: 'Section 2', desc: 'Monologue on Local Facility', badge: 'General' },
-  { num: 3, title: 'Section 3', desc: 'Academic Project Discussion', badge: 'Education' },
-  { num: 4, title: 'Section 4', desc: 'University Lecture', badge: 'Academic' },
+  { num: 1, title: 'Section 1', desc: 'Social & Transactional Dialogue', badge: 'Everyday' },
+  { num: 2, title: 'Section 2', desc: 'Local Facility & Campus Map', badge: 'General' },
+  { num: 3, title: 'Section 3', desc: 'Academic Project Collaboration', badge: 'Education' },
+  { num: 4, title: 'Section 4', desc: 'University Research Lecture', badge: 'Academic' },
 ];
 
 export const ListeningModule: React.FC = () => {
@@ -26,15 +28,15 @@ export const ListeningModule: React.FC = () => {
 
   const [activeSection, setActiveSection] = useState(2);
   const [isPlaying, setIsPlaying] = useState(false);
-  const [playbackSpeed, setPlaybackSpeed] = useState<number>(1);
+  const [playbackSpeed, setPlaybackSpeed] = useState<number>(1.0);
   const [currentTime, setCurrentTime] = useState<number>(0);
   const [accent, setAccent] = useState<'UK' | 'US' | 'AU'>('UK');
   const [userAnswers, setUserAnswers] = useState<Record<string, string>>({});
   const [isSubmitted, setIsSubmitted] = useState(false);
-  const [showTranscript, setShowTranscript] = useState(false);
+  const [showTranscript, setShowTranscript] = useState(true);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
 
-  const duration = test.durationSeconds;
+  const duration = test.durationSeconds || 180;
 
   // Audio timer simulation
   useEffect(() => {
@@ -98,62 +100,68 @@ export const ListeningModule: React.FC = () => {
     recordActivity(
       `${test.title} (Listening Sec ${test.sectionNumber})`,
       'Listening',
-      `${correctCount}/${test.questions.length} (Band ${bandEstimated})`
+      `Band ${bandEstimated} (${correctCount}/${test.questions.length})`
     );
-    showToast(`Test Submitted! Band score estimated: ${bandEstimated}`);
+    showToast(`Scored ${correctCount}/${test.questions.length} questions correct!`);
   };
 
   const formatTime = (secs: number) => {
     const m = Math.floor(secs / 60);
     const s = Math.floor(secs % 60);
-    return `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+    return `${m}:${s.toString().padStart(2, '0')}`;
   };
 
   const transcriptParagraphs = [
     {
-      time: 5,
-      text: 'Good morning everyone, and welcome to this orientation tour of our international university sports complex.',
+      time: 0,
+      speaker: 'Receptionist',
+      text: 'Good morning, welcome to Southfield Community Sports Center. How may I direct you today?',
     },
     {
       time: 25,
-      text: 'As you can see, the main Olympic-sized swimming pool is on your left, which is open daily from 6:00 AM until 10:00 PM for registered students.',
+      speaker: 'Visitor',
+      text: 'Hi there, I am interested in joining the community cycle hire scheme and would also like information about facility bookings.',
     },
     {
-      time: 50,
-      text: 'Regarding locker access and equipment checkout, please remember that valid student identification cards must be swiped at the front turnstile.',
+      time: 60,
+      speaker: 'Receptionist',
+      text: 'Certainly! The bike scheme operates across seven automated docking stations. Rental is completely free for the initial forty-five minutes of any journey.',
     },
     {
-      time: 90,
-      text: 'For personal coaching or specialized fitness assessments, advance reservations can be made via the university online portal or directly at the concierge desk.',
+      time: 80,
+      speaker: 'Receptionist',
+      text: 'Please note however that cycling across the central pedestrian quadrangle between 11:00 AM and 2:00 PM is strictly prohibited to guarantee safety.',
+    },
+    {
+      time: 105,
+      speaker: 'Receptionist',
+      text: 'If you encounter any tire puncture, please locate the yellow emergency repair docks situated right adjacent to the north athletic pavilion.',
     },
   ];
 
   return (
-    <div className="space-y-8 pb-20">
-      {/* Header Banner */}
-      <div className="relative overflow-hidden rounded-3xl border border-stone-200/80 bg-gradient-to-br from-white via-[#FCFBF8] to-[#F5F2EA] p-6 shadow-2xs dark:border-stone-800 dark:from-stone-900 dark:via-stone-900 dark:to-stone-950 sm:p-8">
-        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-          <div className="space-y-1 max-w-xl">
-            <div className="flex items-center gap-2 text-[10px] font-semibold uppercase tracking-wider text-stone-500 dark:text-stone-400">
-              <Headphones className="h-3.5 w-3.5" />
-              <span>Audio Studio • Multi-Accent Simulation</span>
-            </div>
-            <h1 className="text-2xl font-light tracking-tight text-stone-900 dark:text-white sm:text-3xl">
-              {test.title}
-            </h1>
-            <p className="text-xs text-stone-500 dark:text-stone-400 leading-relaxed">
-              {test.scenario}
-            </p>
-          </div>
+    <div className="mx-auto max-w-5xl space-y-8 pb-24 text-[#111318] bg-white">
+      {/* Editorial Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-stone-200/80 pb-5">
+        <div className="space-y-1">
+          <span className="text-[11px] font-bold uppercase tracking-widest text-indigo-600">
+            IELTS LISTENING LABORATORY
+          </span>
+          <h1 className="text-3xl sm:text-4xl font-black tracking-tight text-[#111318] uppercase">
+            SECTION {activeSection} · AUDIO LAB
+          </h1>
+          <p className="text-xs sm:text-sm text-[#5C616B]">
+            Authentic multi-accent English with interactive timestamp scrubbing and acoustic distractor drills.
+          </p>
+        </div>
 
-          <div className="flex items-center gap-2">
-            <span className="rounded-full bg-stone-100 px-3 py-1 text-xs font-medium text-stone-700 dark:bg-stone-800 dark:text-stone-300">
-              {test.questions.length} Questions
-            </span>
-            <span className="rounded-full bg-stone-900 px-3 py-1 text-xs font-semibold text-white dark:bg-stone-100 dark:text-stone-900">
-              {formatTime(duration)}
-            </span>
-          </div>
+        <div className="flex items-center gap-2">
+          <span className="rounded-full bg-indigo-50 px-3 py-1 text-xs font-bold text-indigo-700 border border-indigo-100">
+            {test.questions.length} Questions
+          </span>
+          <span className="rounded-full bg-stone-100 px-3 py-1 text-xs font-mono font-bold text-[#111318]">
+            {formatTime(duration)}
+          </span>
         </div>
       </div>
 
@@ -165,25 +173,21 @@ export const ListeningModule: React.FC = () => {
             <button
               key={sec.num}
               onClick={() => setActiveSection(sec.num)}
-              className={`rounded-2xl border p-3.5 text-left transition-all ${
+              className={`rounded-2xl border p-3.5 text-left transition-all cursor-pointer ${
                 isCurrent
-                  ? 'border-stone-900 bg-white shadow-2xs dark:border-stone-100 dark:bg-stone-850'
-                  : 'border-stone-200/70 bg-white/60 hover:bg-white dark:border-stone-800 dark:bg-stone-900/60'
+                  ? 'border-indigo-600 bg-indigo-50/50 shadow-2xs text-indigo-900'
+                  : 'border-stone-200 bg-white hover:border-stone-300 text-[#111318]'
               }`}
             >
               <div className="flex items-center justify-between">
-                <span
-                  className={`text-xs font-semibold ${
-                    isCurrent ? 'text-stone-950 dark:text-white' : 'text-stone-700 dark:text-stone-300'
-                  }`}
-                >
+                <span className={`text-xs font-bold ${isCurrent ? 'text-indigo-700' : 'text-[#111318]'}`}>
                   {sec.title}
                 </span>
-                <span className="rounded-full bg-stone-100 px-1.5 py-0.5 text-[9px] font-medium text-stone-500 dark:bg-stone-800 dark:text-stone-400">
+                <span className="rounded-full bg-stone-100 px-1.5 py-0.5 text-[9px] font-bold text-[#5C616B]">
                   {sec.badge}
                 </span>
               </div>
-              <p className="mt-1 text-[11px] text-stone-400 dark:text-stone-500 line-clamp-1">
+              <p className="mt-1 text-[11px] text-[#5C616B] line-clamp-1">
                 {sec.desc}
               </p>
             </button>
@@ -191,13 +195,13 @@ export const ListeningModule: React.FC = () => {
         })}
       </div>
 
-      {/* Modern Audio Player */}
-      <div className="rounded-3xl border border-stone-200/80 bg-white p-6 shadow-2xs dark:border-stone-800 dark:bg-stone-900 sm:p-8">
-        <div className="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
+      {/* Audio Player with Clean Timeline & 0.8x / 1.0x / 1.2x Speed Controls */}
+      <div className="rounded-3xl border border-indigo-100 bg-[#F6F4FF] p-6 sm:p-7 shadow-xs space-y-5">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex items-center gap-4">
             <button
               onClick={handleTogglePlay}
-              className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-stone-900 text-white shadow-sm transition-transform hover:scale-105 active:scale-95 dark:bg-stone-100 dark:text-stone-900"
+              className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-indigo-600 text-white shadow-md shadow-indigo-600/20 hover:bg-indigo-700 active:scale-95 transition-all cursor-pointer"
               aria-label={isPlaying ? 'Pause Audio' : 'Play Audio'}
             >
               {isPlaying ? <Pause className="h-5 w-5" /> : <Play className="h-5 w-5 fill-current ml-0.5" />}
@@ -205,7 +209,7 @@ export const ListeningModule: React.FC = () => {
 
             <button
               onClick={handleReset}
-              className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-stone-200 bg-stone-50 text-stone-600 hover:bg-stone-100 dark:border-stone-700 dark:bg-stone-800 dark:text-stone-300"
+              className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-stone-200 bg-white text-[#5C616B] hover:text-[#111318] hover:bg-stone-50 transition-colors cursor-pointer shadow-2xs"
               title="Reset Audio"
             >
               <RotateCcw className="h-4 w-4" />
@@ -213,30 +217,30 @@ export const ListeningModule: React.FC = () => {
 
             <div>
               <div className="flex items-center gap-2">
-                <p className="text-xs font-semibold text-stone-900 dark:text-white">
-                  Cambridge Audio • Section {test.sectionNumber}
+                <p className="text-sm font-bold text-[#111318]">
+                  Cambridge Track · Section {activeSection}
                 </p>
                 {isPlaying && (
-                  <span className="h-1.5 w-1.5 rounded-full bg-amber-500 animate-ping" />
+                  <span className="flex h-2 w-2 rounded-full bg-[#10B981] animate-pulse" />
                 )}
               </div>
-              <p className="text-[11px] text-stone-400 dark:text-stone-500">
-                Natural pace with authentic room acoustics
+              <p className="text-xs text-[#5C616B]">
+                {test.scenario || 'Sports & Community Center Navigation'}
               </p>
             </div>
           </div>
 
-          <div className="flex flex-wrap items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2.5">
             {/* Accent Selector */}
-            <div className="flex items-center rounded-full border border-stone-200 bg-stone-50 p-0.5 text-xs font-medium dark:border-stone-700 dark:bg-stone-800">
-              {(['UK', 'US', 'AU'] as ('UK' | 'US' | 'AU')[]).map((ac) => (
+            <div className="flex items-center rounded-xl border border-stone-200 bg-white p-1 text-xs font-semibold shadow-2xs">
+              {(['UK', 'US', 'AU'] as const).map((ac) => (
                 <button
                   key={ac}
                   onClick={() => setAccent(ac)}
-                  className={`rounded-full px-2.5 py-1 transition-all ${
+                  className={`rounded-lg px-2.5 py-1 transition-all cursor-pointer ${
                     accent === ac
-                      ? 'bg-white text-stone-900 shadow-2xs font-semibold dark:bg-stone-700 dark:text-white'
-                      : 'text-stone-500 hover:text-stone-900'
+                      ? 'bg-indigo-600 text-white shadow-2xs font-bold'
+                      : 'text-[#5C616B] hover:text-[#111318]'
                   }`}
                 >
                   {ac}
@@ -244,86 +248,101 @@ export const ListeningModule: React.FC = () => {
               ))}
             </div>
 
-            {/* Playback Speed */}
-            <div className="flex items-center rounded-full border border-stone-200 bg-stone-50 p-0.5 text-xs font-medium dark:border-stone-700 dark:bg-stone-800">
-              {[0.75, 1, 1.25].map((spd) => (
+            {/* Speed controls: 0.8x / 1.0x / 1.2x */}
+            <div className="flex items-center rounded-xl border border-stone-200 bg-white p-1 text-xs font-semibold shadow-2xs">
+              {[0.8, 1.0, 1.2].map((spd) => (
                 <button
                   key={spd}
                   onClick={() => setPlaybackSpeed(spd)}
-                  className={`rounded-full px-2.5 py-1 transition-all ${
+                  className={`rounded-lg px-2.5 py-1 transition-all cursor-pointer ${
                     playbackSpeed === spd
-                      ? 'bg-white text-stone-900 shadow-2xs font-semibold dark:bg-stone-700 dark:text-white'
-                      : 'text-stone-500 hover:text-stone-900'
+                      ? 'bg-indigo-600 text-white shadow-2xs font-bold'
+                      : 'text-[#5C616B] hover:text-[#111318]'
                   }`}
                 >
-                  {spd}x
+                  {spd.toFixed(1)}x
                 </button>
               ))}
             </div>
 
-            <div className="rounded-full border border-stone-200 bg-stone-50 px-3 py-1 font-mono text-xs font-medium text-stone-700 dark:border-stone-700 dark:bg-stone-800 dark:text-stone-300">
+            <div className="rounded-xl border border-stone-200 bg-white px-3 py-1.5 font-mono text-xs font-bold text-[#111318] shadow-2xs">
               {formatTime(currentTime)} / {formatTime(duration)}
             </div>
           </div>
         </div>
 
-        {/* Tactile Waveform Bars */}
-        <div className="mt-6 flex items-center justify-between gap-1 h-8 px-1">
-          {Array.from({ length: 48 }).map((_, i) => {
-            const progressRatio = currentTime / duration;
-            const barRatio = i / 48;
-            const isPassed = barRatio <= progressRatio;
+        {/* Clean Timeline Waveform Scrubbing */}
+        <div className="space-y-1.5">
+          <div className="flex items-center justify-between gap-1 h-8 px-1">
+            {Array.from({ length: 48 }).map((_, i) => {
+              const progressRatio = currentTime / duration;
+              const barRatio = i / 48;
+              const isPassed = barRatio <= progressRatio;
 
-            const heights = [30, 55, 80, 40, 70, 95, 45, 60, 85, 35, 65, 90];
-            const baseH = heights[i % heights.length];
-            const animH = isPlaying ? Math.max(15, (baseH + (i % 5) * 5) % 100) : baseH;
+              const heights = [30, 55, 80, 40, 70, 95, 45, 60, 85, 35, 65, 90];
+              const baseH = heights[i % heights.length];
+              const animH = isPlaying ? Math.max(15, (baseH + (i % 5) * 5) % 100) : baseH;
 
-            return (
-              <div
-                key={i}
-                onClick={() => setCurrentTime(Math.round(barRatio * duration))}
-                style={{ height: `${animH}%` }}
-                className={`w-1 rounded-full cursor-pointer transition-all duration-200 ${
-                  isPassed
-                    ? 'bg-stone-900 dark:bg-amber-300'
-                    : 'bg-stone-200 dark:bg-stone-800 hover:bg-stone-400'
-                }`}
-              />
-            );
-          })}
-        </div>
+              return (
+                <div
+                  key={i}
+                  onClick={() => setCurrentTime(Math.round(barRatio * duration))}
+                  style={{ height: `${animH}%` }}
+                  className={`w-1 rounded-full cursor-pointer transition-all duration-200 ${
+                    isPassed ? 'bg-indigo-600' : 'bg-indigo-200/70 hover:bg-indigo-300'
+                  }`}
+                />
+              );
+            })}
+          </div>
 
-        <div className="mt-2">
           <input
             type="range"
             min={0}
             max={duration}
             value={currentTime}
             onChange={(e) => setCurrentTime(Number(e.target.value))}
-            className="h-1.5 w-full cursor-pointer appearance-none rounded-full bg-stone-100 dark:bg-stone-800 accent-stone-900 dark:accent-stone-100"
+            className="h-1.5 w-full cursor-pointer appearance-none rounded-full bg-indigo-200/60 accent-indigo-600"
           />
         </div>
       </div>
 
-      {/* Main Grid: Questions & Transcript */}
+      {/* Main Grid: Questions & Map / Synchronized Transcript */}
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-12">
+        {/* Left Column: Questions (7 cols) */}
         <div className="space-y-6 lg:col-span-7">
-          <div className="rounded-3xl border border-stone-200/80 bg-white p-7 shadow-2xs dark:border-stone-800 dark:bg-stone-900 lg:p-8">
-            <div className="flex items-center justify-between border-b border-stone-100 pb-4 dark:border-stone-800">
+          <div className="rounded-3xl border border-stone-200/80 bg-white p-6 sm:p-7 shadow-xs space-y-5">
+            <div className="flex items-center justify-between border-b border-stone-100 pb-3">
               <div>
-                <h3 className="text-sm font-semibold text-stone-900 dark:text-white">
+                <h3 className="text-sm font-bold text-[#111318]">
                   Questions 1–{test.questions.length}
                 </h3>
-                <p className="text-[11px] text-stone-400">
+                <p className="text-[11px] text-[#5C616B]">
                   Write NO MORE THAN TWO WORDS AND/OR A NUMBER
                 </p>
               </div>
-              <span className="text-xs text-stone-500">
+              <span className="text-xs font-mono text-[#5C616B]">
                 {Object.keys(userAnswers).length}/{test.questions.length} Answered
               </span>
             </div>
 
-            <div className="mt-6 space-y-5">
+            {/* Interactive Campus / Facility Map Diagram for Section 2 */}
+            {activeSection === 2 && (
+              <div className="rounded-2xl border border-stone-200 bg-[#FAF9F5] p-4 text-xs space-y-2">
+                <div className="flex items-center gap-1.5 text-xs font-bold text-indigo-700">
+                  <MapPin className="h-4 w-4" />
+                  <span>Map Diagram: Southfield Community Sports Center</span>
+                </div>
+                <div className="rounded-xl border border-stone-200 bg-white p-4 font-mono text-[11px] text-[#111318] text-center space-y-1">
+                  <p className="font-bold text-stone-500">[ NORTH PAVILION ]</p>
+                  <p className="text-indigo-600 font-bold">▲ (Yellow Emergency Repair Dock)</p>
+                  <p className="text-[#5C616B]">|=== Pedestrian Quadrangle (No cycling 11am-2pm) ===|</p>
+                  <p className="font-bold text-stone-500">[ RECEPTION & ENTRY DOCKS ]</p>
+                </div>
+              </div>
+            )}
+
+            <div className="space-y-4">
               {test.questions.map((q, idx) => {
                 const uAns = (userAnswers[q.id] || '').trim().toLowerCase();
                 const cAns = q.correctAnswer.trim().toLowerCase();
@@ -335,25 +354,25 @@ export const ListeningModule: React.FC = () => {
                 return (
                   <div
                     key={q.id}
-                    className={`rounded-2xl border p-4.5 transition-all ${
+                    className={`rounded-2xl border p-4 transition-all ${
                       isCorrect
-                        ? 'border-emerald-200 bg-emerald-50/30 dark:border-emerald-800/40 dark:bg-emerald-950/20'
+                        ? 'border-emerald-200 bg-emerald-50/40'
                         : isWrong
-                        ? 'border-rose-200 bg-rose-50/20 dark:border-rose-900/40 dark:bg-rose-950/20'
-                        : 'border-stone-200/70 bg-[#FAF9F5]/70 dark:border-stone-800 dark:bg-stone-850/50'
+                        ? 'border-rose-200 bg-rose-50/40'
+                        : 'border-stone-200 bg-white'
                     }`}
                   >
                     <div className="flex items-start gap-3">
-                      <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-stone-900 text-xs font-semibold text-white dark:bg-stone-100 dark:text-stone-900">
+                      <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-indigo-600 text-xs font-bold text-white">
                         {idx + 1}
                       </span>
 
-                      <div className="flex-1 space-y-2.5">
-                        <p className="text-xs font-medium text-stone-900 dark:text-stone-100 leading-relaxed">
+                      <div className="flex-1 space-y-2">
+                        <p className="text-xs font-semibold text-[#111318] leading-relaxed">
                           {q.prompt}
                         </p>
 
-                        {/* Options */}
+                        {/* Multiple Choice */}
                         {q.type === 'multiple-choice' && q.options && (
                           <div className="space-y-1.5 pt-1">
                             {q.options.map((opt) => {
@@ -365,8 +384,8 @@ export const ListeningModule: React.FC = () => {
                                   key={opt}
                                   className={`flex cursor-pointer items-center gap-2.5 rounded-xl border px-3 py-2 text-xs transition-all ${
                                     isSelected
-                                      ? 'border-stone-900 bg-white font-semibold text-stone-950 shadow-2xs dark:border-stone-100 dark:bg-stone-800 dark:text-white'
-                                      : 'border-stone-200/70 bg-white/70 text-stone-700 hover:bg-white dark:border-stone-700 dark:bg-stone-800/60 dark:text-stone-300'
+                                      ? 'border-indigo-600 bg-indigo-50/50 font-bold text-indigo-900'
+                                      : 'border-stone-200 bg-white text-[#111318] hover:bg-stone-50'
                                   }`}
                                 >
                                   <input
@@ -376,7 +395,7 @@ export const ListeningModule: React.FC = () => {
                                     checked={isSelected}
                                     onChange={() => handleAnswerChange(q.id, letter)}
                                     disabled={isSubmitted}
-                                    className="accent-stone-900 dark:accent-stone-100"
+                                    className="accent-indigo-600"
                                   />
                                   <span>{opt}</span>
                                 </label>
@@ -392,28 +411,28 @@ export const ListeningModule: React.FC = () => {
                               type="text"
                               value={userAnswers[q.id] || ''}
                               onChange={(e) => handleAnswerChange(q.id, e.target.value)}
-                              placeholder="Nhập câu trả lời..."
+                              placeholder="Type your answer..."
                               disabled={isSubmitted}
-                              className="w-full rounded-xl border border-stone-200 bg-white px-3.5 py-2 text-xs text-stone-900 focus:border-stone-500 focus:outline-hidden dark:border-stone-700 dark:bg-stone-800 dark:text-stone-100"
+                              className="w-full rounded-xl border border-stone-200 bg-white px-3.5 py-2 text-xs text-[#111318] outline-hidden focus:border-indigo-600"
                             />
                           </div>
                         )}
 
                         {/* Result review */}
                         {isSubmitted && (
-                          <div className="mt-2 rounded-xl border border-stone-200 bg-white p-3 text-xs dark:border-stone-750 dark:bg-stone-800">
-                            <div className="flex items-center gap-1.5 font-semibold">
+                          <div className="mt-2 rounded-xl border border-stone-200 bg-white p-3 text-xs">
+                            <div className="flex items-center gap-1.5 font-bold">
                               {isCorrect ? (
-                                <span className="flex items-center gap-1 text-emerald-700 dark:text-emerald-400">
+                                <span className="flex items-center gap-1 text-emerald-700">
                                   <CheckCircle2 className="h-3.5 w-3.5" /> Correct: {q.correctAnswer}
                                 </span>
                               ) : (
-                                <span className="flex items-center gap-1 text-rose-700 dark:text-rose-400">
+                                <span className="flex items-center gap-1 text-rose-700">
                                   <XCircle className="h-3.5 w-3.5" /> Official Answer: {q.correctAnswer}
                                 </span>
                               )}
                             </div>
-                            <p className="mt-1 text-stone-600 dark:text-stone-300 leading-relaxed">
+                            <p className="mt-1 text-[#5C616B] leading-relaxed">
                               {q.explanation}
                             </p>
                           </div>
@@ -426,21 +445,21 @@ export const ListeningModule: React.FC = () => {
             </div>
 
             {/* Actions */}
-            <div className="mt-6 border-t border-stone-100 pt-4 flex items-center justify-between dark:border-stone-800">
+            <div className="mt-6 border-t border-stone-100 pt-4 flex items-center justify-between">
               <button
                 onClick={() => setShowTranscript(!showTranscript)}
-                className="text-xs font-semibold text-stone-700 hover:text-stone-950 dark:text-stone-300"
+                className="text-xs font-semibold text-indigo-600 hover:underline cursor-pointer"
               >
-                {showTranscript ? 'Hide Audio Transcript' : 'Show Synchronized Transcript'}
+                {showTranscript ? 'Hide Synchronized Transcript' : 'Show Synchronized Transcript'}
               </button>
 
               <button
                 onClick={handleSubmit}
                 disabled={isSubmitted}
-                className={`rounded-full px-6 py-2.5 text-xs font-semibold text-white transition-all ${
+                className={`rounded-xl px-6 py-2.5 text-xs font-bold text-white transition-all cursor-pointer ${
                   isSubmitted
-                    ? 'bg-stone-400 dark:bg-stone-700 cursor-not-allowed'
-                    : 'bg-stone-900 hover:bg-stone-800 dark:bg-stone-100 dark:text-stone-900 dark:hover:bg-white'
+                    ? 'bg-stone-300 cursor-not-allowed'
+                    : 'bg-indigo-600 hover:bg-indigo-700 active:scale-98 shadow-xs'
                 }`}
               >
                 {isSubmitted ? 'Section Evaluated ✓' : 'Submit Answers'}
@@ -449,62 +468,68 @@ export const ListeningModule: React.FC = () => {
           </div>
         </div>
 
-        {/* Transcript (5 cols) */}
+        {/* Right Column: Synchronized Transcript (5 cols) */}
         <div className="space-y-6 lg:col-span-5">
-          <div className="rounded-3xl border border-stone-200/80 bg-white p-7 shadow-2xs dark:border-stone-800 dark:bg-stone-900 lg:p-8">
-            <div className="flex items-center justify-between border-b border-stone-100 pb-4 dark:border-stone-800">
+          <div className="rounded-3xl border border-stone-200/80 bg-white p-6 sm:p-7 shadow-xs space-y-4">
+            <div className="flex items-center justify-between border-b border-stone-100 pb-3">
               <div className="flex items-center gap-2">
-                <FileAudio className="h-4 w-4 text-stone-600 dark:text-stone-400" />
-                <h3 className="text-sm font-semibold text-stone-900 dark:text-white">
-                  Synchronized Transcript
+                <FileAudio className="h-4 w-4 text-indigo-600" />
+                <h3 className="text-sm font-bold text-[#111318]">
+                  Synchronized Audio Transcript
                 </h3>
               </div>
-              <span className="text-[11px] text-stone-400">
+              <span className="text-[11px] text-[#5C616B]">
                 Click line to jump
               </span>
             </div>
 
-            <div className="mt-5 space-y-3 text-xs">
-              {transcriptParagraphs.map((para, idx) => {
-                const isCurrentLine =
-                  currentTime >= para.time &&
-                  (idx === transcriptParagraphs.length - 1 ||
-                    currentTime < transcriptParagraphs[idx + 1].time);
+            {showTranscript ? (
+              <div className="space-y-2.5 text-xs max-h-[500px] overflow-y-auto pr-1">
+                {transcriptParagraphs.map((para, idx) => {
+                  const isCurrentLine =
+                    currentTime >= para.time &&
+                    (idx === transcriptParagraphs.length - 1 ||
+                      currentTime < transcriptParagraphs[idx + 1].time);
 
-                return (
-                  <div
-                    key={idx}
-                    onClick={() => setCurrentTime(para.time)}
-                    className={`group cursor-pointer rounded-2xl p-3.5 transition-all ${
-                      isCurrentLine
-                        ? 'border border-stone-900/30 bg-stone-100/70 shadow-2xs dark:border-stone-600 dark:bg-stone-800'
-                        : 'border border-transparent hover:bg-stone-50 dark:hover:bg-stone-850'
-                    }`}
-                  >
-                    <div className="flex items-center justify-between text-[10px] text-stone-400 mb-1">
-                      <span className="font-mono font-medium text-stone-600 dark:text-stone-300">
-                        {formatTime(para.time)}
-                      </span>
-                      {isCurrentLine && (
-                        <span className="font-semibold text-amber-700 dark:text-amber-400 uppercase text-[9px]">
-                          Active Audio
-                        </span>
-                      )}
-                    </div>
-
-                    <p
-                      className={`leading-relaxed ${
+                  return (
+                    <div
+                      key={idx}
+                      onClick={() => setCurrentTime(para.time)}
+                      className={`group cursor-pointer rounded-2xl p-3.5 transition-all ${
                         isCurrentLine
-                          ? 'font-medium text-stone-950 dark:text-white'
-                          : 'text-stone-600 dark:text-stone-400'
+                          ? 'border border-indigo-200 bg-indigo-50/60 shadow-2xs'
+                          : 'border border-stone-100 hover:bg-stone-50'
                       }`}
                     >
-                      {para.text}
-                    </p>
-                  </div>
-                );
-              })}
-            </div>
+                      <div className="flex items-center justify-between text-[10px] text-[#5C616B] mb-1">
+                        <span className="font-mono font-bold text-[#111318]">
+                          {formatTime(para.time)} · {para.speaker}
+                        </span>
+                        {isCurrentLine && (
+                          <span className="font-bold text-indigo-700 uppercase text-[9px]">
+                            Active Audio
+                          </span>
+                        )}
+                      </div>
+
+                      <p
+                        className={`leading-relaxed ${
+                          isCurrentLine
+                            ? 'font-medium text-[#111318]'
+                            : 'text-[#5C616B]'
+                        }`}
+                      >
+                        {para.text}
+                      </p>
+                    </div>
+                  );
+                })}
+              </div>
+            ) : (
+              <div className="text-center py-10 text-xs text-[#5C616B]">
+                Transcript hidden during listening drill. Click "Show Synchronized Transcript" to view.
+              </div>
+            )}
           </div>
         </div>
       </div>

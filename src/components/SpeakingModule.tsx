@@ -193,14 +193,14 @@ export const SpeakingModule: React.FC = () => {
 
   return (
     <div className="mx-auto max-w-5xl space-y-8 pb-24 text-[#111318] bg-white">
-      {/* Editorial Header */}
+      {/* 17. Header: SPEAKING PRACTICE / PART 2 */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-stone-200/80 pb-5">
         <div className="space-y-1">
           <span className="text-[11px] font-bold uppercase tracking-widest text-indigo-600">
-            SPEAKING INTERVIEW ROOM
+            SPEAKING PRACTICE
           </span>
           <h1 className="text-3xl sm:text-4xl font-black tracking-tight text-[#111318] uppercase">
-            AI Examiner Studio
+            PART {activePart} · INTERVIEW STUDIO
           </h1>
           <p className="text-xs sm:text-sm text-[#5C616B]">
             Calibrated Cambridge IELTS interview simulation with real-time acoustic feedback.
@@ -208,7 +208,7 @@ export const SpeakingModule: React.FC = () => {
         </div>
 
         {/* Part 1 / 2 / 3 Selector */}
-        <div className="flex items-center rounded-xl border border-stone-200 bg-white p-1 text-xs font-semibold self-start sm:self-auto">
+        <div className="flex items-center rounded-xl border border-stone-200 bg-white p-1 text-xs font-semibold self-start sm:self-auto shadow-2xs">
           {[1, 2, 3].map((pt) => (
             <button
               key={pt}
@@ -220,7 +220,7 @@ export const SpeakingModule: React.FC = () => {
               }}
               className={`rounded-lg px-4 py-1.5 transition-all cursor-pointer ${
                 activePart === pt
-                  ? 'bg-indigo-600 text-white shadow-xs'
+                  ? 'bg-indigo-600 text-white shadow-xs font-bold'
                   : 'text-[#5C616B] hover:text-[#111318]'
               }`}
             >
@@ -322,42 +322,70 @@ export const SpeakingModule: React.FC = () => {
         <div className="lg:col-span-7 space-y-5">
           {/* Large Question Display */}
           <div className="rounded-2xl border border-stone-200 bg-white p-6 sm:p-7 shadow-xs space-y-4">
-            <div className="flex items-center justify-between border-b border-stone-100 pb-3">
+            <div className="flex flex-wrap items-center justify-between gap-2 border-b border-stone-100 pb-3">
               <span className="text-xs font-bold uppercase tracking-wider text-indigo-600">
-                Part {activePart} {activePart === 2 ? 'Cue Card Topic' : 'Discussion Question'}
+                {activePart === 2 ? 'CUE CARD PRESENTATION' : `PART ${activePart} DISCUSSION`}
               </span>
 
-              {activePart === 2 && (
-                <div className="flex items-center gap-2">
-                  <Clock className="h-3.5 w-3.5 text-stone-400" />
-                  <span className="font-mono text-xs font-bold text-[#111318]">
-                    Prep: {formatTimer(prepSeconds)}
-                  </span>
+              {/* Controls: Prepare (1m), Speak (2m), NOVA Real-Time Analysis */}
+              <div className="flex flex-wrap items-center gap-2">
+                {activePart === 2 && (
                   <button
                     onClick={() => {
                       setIsPrepping(!isPrepping);
                       if (!isPrepping && prepSeconds === 0) setPrepSeconds(60);
                     }}
-                    className="rounded bg-stone-100 px-2 py-0.5 text-[10px] font-bold text-stone-800 hover:bg-stone-200 cursor-pointer"
+                    className={`flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs font-bold transition-all cursor-pointer shadow-2xs ${
+                      isPrepping
+                        ? 'border-indigo-600 bg-indigo-50 text-indigo-700'
+                        : 'border-stone-200 bg-white text-[#111318] hover:bg-stone-50'
+                    }`}
                   >
-                    {isPrepping ? 'Pause' : 'Start 1-Min Prep'}
+                    <Clock className="h-3.5 w-3.5 text-indigo-600" />
+                    <span>Prepare (1m): {formatTimer(prepSeconds)}</span>
                   </button>
-                </div>
-              )}
+                )}
+
+                <button
+                  onClick={toggleRecording}
+                  className={`flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs font-bold transition-all cursor-pointer shadow-2xs ${
+                    isRecording
+                      ? 'border-rose-600 bg-rose-50 text-rose-700'
+                      : 'border-stone-200 bg-white text-[#111318] hover:bg-stone-50'
+                  }`}
+                >
+                  <Mic className={`h-3.5 w-3.5 ${isRecording ? 'text-rose-600 animate-pulse' : 'text-indigo-600'}`} />
+                  <span>{isRecording ? `Recording (${formatTimer(speakingSeconds)})` : 'Speak (2m)'}</span>
+                </button>
+
+                <button
+                  onClick={handleEvaluateSpeaking}
+                  disabled={loading || (!transcript && speakingSeconds === 0)}
+                  className="flex items-center gap-1.5 rounded-lg bg-indigo-600 px-3.5 py-1.5 text-xs font-bold text-white shadow-xs hover:bg-indigo-700 active:scale-98 transition-all cursor-pointer disabled:opacity-40"
+                >
+                  <Sparkles className="h-3.5 w-3.5" />
+                  <span>NOVA Real-Time Analysis</span>
+                </button>
+              </div>
             </div>
 
-            {/* Large Question Typography */}
-            <h2 className="text-xl sm:text-2xl font-bold tracking-tight text-[#111318] leading-snug">
-              {currentQuestionText}
-            </h2>
+            {/* Topic Presentation */}
+            <div className="space-y-1">
+              <span className="text-[10px] font-bold uppercase tracking-wider text-[#5C616B]">
+                Topic:
+              </span>
+              <h2 className="text-xl sm:text-2xl font-black tracking-tight text-[#111318] leading-snug">
+                {partData.cueCard ? partData.cueCard.topic : currentQuestionText}
+              </h2>
+            </div>
 
-            {/* Part 2 Bullet Points */}
+            {/* Part 2 Points to Cover */}
             {activePart === 2 && partData.cueCard && (
-              <div className="rounded-xl border border-stone-100 bg-stone-50/60 p-4 text-xs space-y-2">
-                <p className="font-semibold text-[#111318]">You should say:</p>
+              <div className="rounded-xl border border-indigo-100 bg-[#F6F4FF] p-4 text-xs space-y-2">
+                <p className="font-bold text-[#111318]">Points to cover:</p>
                 <ul className="list-disc list-inside space-y-1 text-[#5C616B]">
                   {partData.cueCard.bulletPoints.map((bp, i) => (
-                    <li key={i}>{bp}</li>
+                    <li key={i} className="font-medium text-[#111318]">{bp}</li>
                   ))}
                 </ul>
               </div>

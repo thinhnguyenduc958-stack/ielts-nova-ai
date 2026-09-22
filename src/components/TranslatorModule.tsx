@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useApp } from '../context/AppContext';
 import { apiService } from '../services/apiService';
-import { TranslationResult, TranslationMode, EnglishVariant } from '../types';
+import { TranslationResult, EnglishVariant } from '../types';
 import {
   Languages,
   ArrowRightLeft,
@@ -11,7 +11,10 @@ import {
   Copy,
   Check,
   ShieldCheck,
+  BookOpen,
 } from 'lucide-react';
+
+type ToneOption = 'Casual' | 'Academic' | 'IELTS Band 8+';
 
 const UK_US_VOCAB = [
   { uk: 'flat', us: 'apartment', meaning: 'căn hộ' },
@@ -22,23 +25,28 @@ const UK_US_VOCAB = [
   { uk: 'timetable', us: 'schedule', meaning: 'thời khóa biểu' },
 ];
 
-const UK_US_SPELLINGS = [
-  { uk: 'colour', us: 'color', rule: '-our vs -or' },
-  { uk: 'analyse', us: 'analyze', rule: '-yse vs -yze' },
-  { uk: 'centre', us: 'center', rule: '-re vs -er' },
-  { uk: 'programme', us: 'program', rule: '-mme vs -m' },
-];
-
 export const TranslatorModule: React.FC = () => {
   const { userProfile, showToast } = useApp();
 
-  const [sourceText, setSourceText] = useState('');
+  const [sourceText, setSourceText] = useState('Urban air pollution negatively affects public health and productivity.');
   const [sourceLang, setSourceLang] = useState<'en' | 'vi'>('en');
   const [targetLang, setTargetLang] = useState<'en' | 'vi'>('vi');
-  const [mode, setMode] = useState<TranslationMode>('ielts');
+  const [tone, setTone] = useState<ToneOption>('IELTS Band 8+');
   const [variant] = useState<EnglishVariant>(userProfile.preferredVariant);
 
-  const [result, setResult] = useState<TranslationResult | null>(null);
+  const [result, setResult] = useState<TranslationResult | null>({
+    translatedText: 'Ô nhiễm không khí đô thị tác động bất lợi sâu sắc đến sức khỏe cộng đồng và năng suất kinh tế vĩ mô.',
+    sourceLanguage: 'en',
+    targetLanguage: 'vi',
+    detectedLanguage: 'en',
+    confidenceScore: 0.98,
+    academicRegisterBand: 'Band 8.0+',
+    suggestedIELTSVocabulary: [
+      { word: 'deleterious', definition: 'gây hại, tác động tiêu cực nghiêm trọng' },
+      { word: 'mitigate', definition: 'giảm nhẹ tác động rủi ro' },
+      { word: 'profoundly', definition: 'một cách sâu sắc, rõ rệt' },
+    ],
+  });
   const [loading, setLoading] = useState(false);
   const [copied, setCopied] = useState(false);
 
@@ -52,7 +60,16 @@ export const TranslatorModule: React.FC = () => {
       higherBandVocab: string[];
       grammarStructures: string;
     };
-  } | null>(null);
+  } | null>({
+    original: 'Urban air pollution negatively affects public health and productivity.',
+    upgraded: 'Ambient atmospheric contamination exerts profoundly deleterious repercussions upon community physiological wellbeing and macroeconomic output.',
+    bandTarget: 'Band 8.5+',
+    improvements: {
+      formalPhrasing: 'Replaced simple phrasal verb "affects" with academic collocation "exerts profoundly deleterious repercussions upon".',
+      higherBandVocab: ['ambient atmospheric contamination', 'deleterious', 'physiological wellbeing', 'macroeconomic output'],
+      grammarStructures: 'Nominalized clause replacing dynamic verbs with formal academic abstract noun phrases.',
+    },
+  });
 
   const handleSwap = () => {
     setSourceLang(targetLang);
@@ -67,7 +84,8 @@ export const TranslatorModule: React.FC = () => {
     if (!sourceText.trim()) return;
     setLoading(true);
     try {
-      const res = await apiService.translateText(sourceText, sourceLang, targetLang, mode, variant);
+      const modeMap = tone === 'Casual' ? 'natural' : tone === 'Academic' ? 'literal' : 'ielts';
+      const res = await apiService.translateText(sourceText, sourceLang, targetLang, modeMap as any, variant);
       setResult(res);
     } catch {
       showToast('Translation service unavailable.');
@@ -80,9 +98,9 @@ export const TranslatorModule: React.FC = () => {
     if (!sourceText.trim()) return;
     setImproving(true);
     try {
-      const upgradeData = await apiService.upgradeSentence(sourceText, 'Band 8.0+');
+      const upgradeData = await apiService.upgradeSentence(sourceText, 'Band 8.5+');
       setIeltsImprovement(upgradeData);
-      showToast('IELTS Sentence Transformation generated!');
+      showToast('IELTS Sentence Upgrade generated!');
     } catch {
       showToast('Unable to generate sentence upgrade.');
     } finally {
@@ -98,97 +116,85 @@ export const TranslatorModule: React.FC = () => {
   };
 
   return (
-    <div className="space-y-8 pb-20">
-      {/* Header Banner */}
-      <div className="relative overflow-hidden rounded-3xl border border-stone-200/80 bg-gradient-to-br from-white via-[#FCFBF8] to-[#F5F2EA] p-6 shadow-2xs dark:border-stone-800 dark:from-stone-900 dark:via-stone-900 dark:to-stone-950 sm:p-8">
-        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-          <div className="space-y-1 max-w-xl">
-            <div className="flex items-center gap-2 text-[10px] font-semibold uppercase tracking-wider text-stone-500 dark:text-stone-400">
-              <Languages className="h-3.5 w-3.5" />
-              <span>Academic Workbench • Verified Cambridge Audit</span>
-            </div>
-            <h1 className="text-2xl font-light tracking-tight text-stone-900 dark:text-white sm:text-3xl">
-              Translation Workbench
-            </h1>
-            <p className="text-xs text-stone-500 dark:text-stone-400 leading-relaxed">
-              Precision bilingual translation calibrated for IELTS Academic Writing and Reading, with dialect distinctions and sentence elevation.
-            </p>
-          </div>
+    <div className="mx-auto max-w-5xl space-y-8 pb-24 text-[#111318] bg-white">
+      {/* 21. Header: ACADEMIC TRANSLATOR "Compare register and academic precision." */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-stone-200/80 pb-5">
+        <div className="space-y-1">
+          <span className="text-[11px] font-bold uppercase tracking-widest text-indigo-600">
+            REGISTER COMPARISON ENGINE
+          </span>
+          <h1 className="text-3xl sm:text-4xl font-black tracking-tight text-[#111318] uppercase">
+            ACADEMIC TRANSLATOR
+          </h1>
+          <p className="text-xs sm:text-sm text-[#5C616B]">
+            "Compare register and academic precision."
+          </p>
+        </div>
 
-          <div className="flex flex-wrap items-center gap-1 rounded-full border border-stone-200 bg-white p-0.5 text-xs font-medium dark:border-stone-700 dark:bg-stone-800">
-            {(['ielts', 'literal', 'natural'] as TranslationMode[]).map((m) => (
-              <button
-                key={m}
-                onClick={() => setMode(m)}
-                className={`rounded-full px-3.5 py-1.5 capitalize transition-all ${
-                  mode === m
-                    ? 'bg-stone-900 text-white shadow-2xs font-semibold dark:bg-stone-100 dark:text-stone-900'
-                    : 'text-stone-600 hover:text-stone-900 dark:text-stone-300'
-                }`}
-              >
-                {m === 'ielts' ? 'IELTS Academic' : m}
-              </button>
-            ))}
-          </div>
+        {/* Tone toggle: Casual / Academic / IELTS Band 8+ */}
+        <div className="flex items-center rounded-xl border border-stone-200 bg-white p-1 text-xs font-semibold self-start sm:self-auto shadow-2xs">
+          {(['Casual', 'Academic', 'IELTS Band 8+'] as ToneOption[]).map((t) => (
+            <button
+              key={t}
+              onClick={() => setTone(t)}
+              className={`rounded-lg px-3.5 py-1.5 transition-all cursor-pointer ${
+                tone === t
+                  ? 'bg-indigo-600 text-white shadow-xs font-bold'
+                  : 'text-[#5C616B] hover:text-[#111318]'
+              }`}
+            >
+              {t}
+            </button>
+          ))}
         </div>
       </div>
 
-      {/* Source & Target Panels */}
+      {/* Language Direction & Translation Workspace */}
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-        {/* Source */}
-        <div className="flex flex-col justify-between rounded-3xl border border-stone-200/80 bg-white p-7 shadow-2xs dark:border-stone-800 dark:bg-stone-900">
+        {/* Source Box */}
+        <div className="flex flex-col justify-between rounded-3xl border border-stone-200 bg-white p-6 sm:p-7 shadow-xs space-y-4">
           <div>
-            <div className="flex items-center justify-between border-b border-stone-100 pb-3 dark:border-stone-800">
-              <span className="text-xs font-semibold text-stone-900 dark:text-white">
+            <div className="flex items-center justify-between border-b border-stone-100 pb-3">
+              <span className="text-xs font-bold uppercase tracking-wider text-indigo-600">
                 {sourceLang === 'en' ? 'English (Source)' : 'Tiếng Việt (Văn bản gốc)'}
               </span>
 
-              <div className="flex items-center gap-1.5">
-                <button
-                  onClick={handleSwap}
-                  className="flex items-center gap-1 rounded-full border border-stone-200 px-2.5 py-1 text-[11px] font-medium text-stone-600 hover:bg-stone-50 dark:border-stone-700 dark:text-stone-300"
-                >
-                  <ArrowRightLeft className="h-3 w-3" />
-                  <span>Swap</span>
-                </button>
-                {sourceLang === 'en' && (
-                  <button
-                    onClick={() => apiService.speakText(sourceText, variant)}
-                    className="rounded-full p-1.5 text-stone-400 hover:bg-stone-100 dark:hover:bg-stone-800"
-                    title="Pronounce"
-                  >
-                    <Volume2 className="h-3.5 w-3.5" />
-                  </button>
-                )}
-              </div>
+              {/* Language Direction Toggle: EN ⇄ VI */}
+              <button
+                onClick={handleSwap}
+                className="flex items-center gap-1.5 rounded-lg border border-stone-200 bg-stone-50 px-3 py-1 text-xs font-bold text-[#111318] hover:bg-stone-100 transition-all cursor-pointer shadow-2xs"
+              >
+                <ArrowRightLeft className="h-3.5 w-3.5 text-indigo-600" />
+                <span>{sourceLang.toUpperCase()} ⇄ {targetLang.toUpperCase()}</span>
+              </button>
             </div>
 
             <textarea
               value={sourceText}
               onChange={(e) => setSourceText(e.target.value)}
-              placeholder="Nhập hoặc dán câu tiếng Anh / tiếng Việt..."
+              placeholder="Nhập hoặc dán văn bản tiếng Anh / tiếng Việt..."
               rows={6}
-              className="mt-4 w-full text-sm font-serif leading-relaxed text-stone-900 placeholder:text-stone-300 focus:outline-hidden dark:bg-stone-900 dark:text-stone-100"
+              className="mt-4 w-full text-sm font-serif leading-relaxed text-[#111318] placeholder:text-stone-300 outline-hidden resize-none"
             />
           </div>
 
-          <div className="flex flex-wrap items-center justify-between gap-3 pt-4 border-t border-stone-100 dark:border-stone-800">
-            <span className="text-[11px] text-stone-400">{sourceText.length} chars</span>
+          <div className="flex flex-wrap items-center justify-between gap-3 pt-3 border-t border-stone-100">
+            <span className="text-xs font-mono text-[#5C616B]">{sourceText.length} characters</span>
 
             <div className="flex items-center gap-2">
               <button
                 onClick={handleImproveForIELTS}
                 disabled={improving}
-                className="flex items-center gap-1.5 rounded-full border border-stone-200 bg-stone-50 px-3.5 py-2 text-xs font-medium text-stone-800 hover:bg-stone-100 dark:border-stone-700 dark:bg-stone-800 dark:text-stone-200"
+                className="flex items-center gap-1.5 rounded-xl border border-indigo-200 bg-indigo-50 px-3.5 py-2 text-xs font-bold text-indigo-700 hover:bg-indigo-100 transition-all cursor-pointer"
               >
-                {improving ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Sparkles className="h-3.5 w-3.5 text-amber-600" />}
-                <span>Improve for IELTS</span>
+                {improving ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Sparkles className="h-3.5 w-3.5" />}
+                <span>IELTS Sentence Upgrade</span>
               </button>
 
               <button
                 onClick={handleTranslate}
                 disabled={loading}
-                className="flex items-center gap-1.5 rounded-full bg-stone-900 px-5 py-2 text-xs font-semibold text-white shadow-sm hover:bg-stone-800 disabled:opacity-50 dark:bg-stone-100 dark:text-stone-900 dark:hover:bg-white"
+                className="flex items-center gap-1.5 rounded-xl bg-indigo-600 px-5 py-2 text-xs font-bold text-white shadow-xs hover:bg-indigo-700 active:scale-98 transition-all cursor-pointer"
               >
                 {loading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Languages className="h-3.5 w-3.5" />}
                 <span>Translate</span>
@@ -197,16 +203,16 @@ export const TranslatorModule: React.FC = () => {
           </div>
         </div>
 
-        {/* Target */}
-        <div className="flex flex-col justify-between rounded-3xl border border-stone-200/80 bg-[#FAF9F5] p-7 shadow-2xs dark:border-stone-800 dark:bg-stone-900/50">
+        {/* Target Translation Box */}
+        <div className="flex flex-col justify-between rounded-3xl border border-stone-200 bg-[#FAF9F5] p-6 sm:p-7 shadow-xs space-y-4">
           <div>
-            <div className="flex items-center justify-between border-b border-stone-200/70 pb-3 dark:border-stone-800">
+            <div className="flex items-center justify-between border-b border-stone-200/70 pb-3">
               <div className="flex items-center gap-2">
-                <span className="text-xs font-semibold text-stone-900 dark:text-white">
-                  {targetLang === 'vi' ? 'Tiếng Việt (Bản dịch học thuật)' : 'English (Academic Translation)'}
+                <span className="text-xs font-bold uppercase tracking-wider text-[#111318]">
+                  {targetLang === 'vi' ? 'Tiếng Việt' : 'English Academic'}
                 </span>
-                <span className="rounded-full bg-stone-200 px-2 py-0.5 text-[10px] font-medium text-stone-700 dark:bg-stone-800 dark:text-stone-300">
-                  Cambridge Register
+                <span className="rounded-full bg-indigo-100 px-2.5 py-0.5 text-[10px] font-bold text-indigo-800">
+                  {tone}
                 </span>
               </div>
 
@@ -214,196 +220,109 @@ export const TranslatorModule: React.FC = () => {
                 <div className="flex items-center gap-1.5">
                   <button
                     onClick={() => handleCopy(result.translatedText)}
-                    className="flex items-center gap-1 rounded-full border border-stone-200 bg-white px-2.5 py-1 text-xs font-medium text-stone-700 hover:bg-stone-50 dark:border-stone-700 dark:bg-stone-800 dark:text-stone-300"
+                    className="flex items-center gap-1 rounded-lg border border-stone-200 bg-white px-2.5 py-1 text-xs font-semibold text-[#111318] hover:bg-stone-50 cursor-pointer shadow-2xs"
                   >
-                    {copied ? <Check className="h-3 w-3 text-emerald-600" /> : <Copy className="h-3 w-3" />}
+                    {copied ? <Check className="h-3.5 w-3.5 text-emerald-600" /> : <Copy className="h-3.5 w-3.5" />}
                     <span>{copied ? 'Copied' : 'Copy'}</span>
                   </button>
-
                   <button
                     onClick={() => apiService.speakText(result.translatedText, variant)}
-                    className="rounded-full p-1.5 text-stone-400 hover:bg-stone-200/60 dark:hover:bg-stone-800"
+                    className="rounded-lg p-1 text-stone-400 hover:text-[#111318] cursor-pointer"
                   >
-                    <Volume2 className="h-3.5 w-3.5" />
+                    <Volume2 className="h-4 w-4" />
                   </button>
                 </div>
               )}
             </div>
 
-            <div className="mt-4 min-h-[140px] text-sm font-serif leading-relaxed text-stone-800 dark:text-stone-200">
+            <div className="mt-4 min-h-[140px] text-sm font-serif leading-relaxed text-[#111318]">
               {loading ? (
                 <div className="flex items-center gap-2 text-stone-400 font-sans text-xs">
-                  <Loader2 className="h-4 w-4 animate-spin text-stone-600" />
-                  <span>Generating academic translation...</span>
+                  <Loader2 className="h-4 w-4 animate-spin text-indigo-600" />
+                  <span>Translating in {tone} register...</span>
                 </div>
               ) : result ? (
-                <p className="text-stone-900 dark:text-white leading-loose">
+                <p className="leading-loose font-medium">
                   {result.translatedText}
                 </p>
               ) : (
                 <p className="text-stone-400 italic">
-                  Press "Translate" or "Improve for IELTS" to view contextual translation and academic structures.
+                  Press "Translate" to view translation calibrated to your target tone.
                 </p>
               )}
             </div>
           </div>
 
-          <div className="flex items-center justify-between pt-4 border-t border-stone-200/70 dark:border-stone-800 text-xs text-stone-400">
+          <div className="flex items-center justify-between pt-3 border-t border-stone-200/70 text-xs text-[#5C616B]">
             <span className="flex items-center gap-1.5">
-              <ShieldCheck className="h-3.5 w-3.5 text-emerald-700 dark:text-emerald-400" />
-              <span>Semantic Verification Passed</span>
+              <ShieldCheck className="h-3.5 w-3.5 text-emerald-600" />
+              <span>Contextually verified translation</span>
             </span>
-            <span className="font-semibold text-stone-700 dark:text-stone-300">Band 8.0 Register</span>
+            <span className="font-bold text-indigo-600">{tone} Register</span>
           </div>
         </div>
       </div>
 
-      {/* IELTS Sentence Upgrade */}
+      {/* Contextual Explanation & Synonym Breakdown */}
       {ieltsImprovement && (
-        <div className="rounded-3xl border border-stone-200/80 bg-[#FAF9F5] p-7 shadow-2xs dark:border-stone-800 dark:bg-stone-900 sm:p-8">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-stone-200/70 pb-4 dark:border-stone-800">
+        <div className="rounded-3xl border border-stone-200 bg-white p-7 shadow-xs space-y-5">
+          <div className="flex items-center justify-between border-b border-stone-100 pb-3">
             <div className="flex items-center gap-2">
-              <Sparkles className="h-4 w-4 text-amber-600" />
-              <div>
-                <h3 className="text-sm font-semibold text-stone-900 dark:text-white">
-                  IELTS Academic Sentence Upgrade
-                </h3>
-                <p className="text-[11px] text-stone-400">
-                  Enhanced lexical density and grammatical range for Task 2
-                </p>
-              </div>
+              <Sparkles className="h-4 w-4 text-indigo-600" />
+              <h3 className="text-sm font-bold text-[#111318]">
+                Contextual Explanation & Academic Transformation
+              </h3>
             </div>
-
-            <span className="rounded-full bg-stone-200 px-3 py-0.5 text-xs font-medium text-stone-800 dark:bg-stone-800 dark:text-stone-200">
+            <span className="rounded-full bg-indigo-50 px-3 py-0.5 text-xs font-bold text-indigo-700 border border-indigo-100">
               {ieltsImprovement.bandTarget} Standard
             </span>
           </div>
 
-          <div className="mt-5 grid grid-cols-1 gap-4 lg:grid-cols-2">
-            <div className="rounded-2xl border border-stone-200 bg-white p-4.5 text-xs dark:border-stone-800 dark:bg-stone-850">
-              <span className="text-[10px] font-medium uppercase tracking-wider text-stone-400">Original (Band 5.5 - 6.0)</span>
-              <p className="mt-2 font-serif italic text-stone-600 dark:text-stone-300 leading-relaxed">
-                "{ieltsImprovement.original}"
-              </p>
-            </div>
-
-            <div className="rounded-2xl border border-stone-300 bg-white p-4.5 text-xs dark:border-stone-700 dark:bg-stone-850">
-              <div className="flex items-center justify-between">
-                <span className="text-[10px] font-semibold uppercase tracking-wider text-stone-800 dark:text-stone-200">
-                  Academic Upgrade (Band 8.0+)
-                </span>
-                <button
-                  onClick={() => handleCopy(ieltsImprovement.upgraded)}
-                  className="text-[11px] font-semibold text-stone-700 hover:text-stone-950 dark:text-stone-300"
-                >
-                  Copy
-                </button>
-              </div>
-              <p className="mt-2 font-serif font-medium text-stone-900 dark:text-white leading-relaxed">
-                "{ieltsImprovement.upgraded}"
-              </p>
-            </div>
+          {/* Upgraded Sentence Comparison */}
+          <div className="rounded-2xl border border-indigo-100 bg-[#F6F4FF] p-4.5 space-y-2">
+            <span className="text-[10px] font-bold uppercase tracking-wider text-indigo-600">
+              Elevated Academic Version
+            </span>
+            <p className="font-serif text-sm font-semibold text-[#111318] leading-relaxed">
+              "{ieltsImprovement.upgraded}"
+            </p>
           </div>
 
-          <div className="mt-4 grid grid-cols-1 gap-4 lg:grid-cols-3">
-            <div className="rounded-2xl border border-stone-100 bg-white p-4 text-xs dark:border-stone-800 dark:bg-stone-850">
-              <h4 className="font-semibold text-stone-900 dark:text-white">
-                Formal Phrasing
-              </h4>
-              <p className="mt-1.5 text-stone-600 dark:text-stone-300 leading-relaxed">
+          {/* Synonym Breakdown & Grammar Analysis Grid */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs">
+            {/* Contextual Explanation */}
+            <div className="rounded-2xl border border-stone-100 bg-[#FAF9F5] p-4 space-y-2">
+              <h4 className="font-bold text-[#111318]">Contextual Explanation</h4>
+              <p className="text-[#5C616B] leading-relaxed">
                 {ieltsImprovement.improvements.formalPhrasing}
               </p>
             </div>
 
-            <div className="rounded-2xl border border-stone-100 bg-white p-4 text-xs dark:border-stone-800 dark:bg-stone-850">
-              <h4 className="font-semibold text-stone-900 dark:text-white">
-                Higher-Band Lexis
-              </h4>
-              <div className="mt-2 flex flex-wrap gap-1">
-                {ieltsImprovement.improvements.higherBandVocab.map((v, i) => (
+            {/* Synonym Breakdown */}
+            <div className="rounded-2xl border border-stone-100 bg-[#FAF9F5] p-4 space-y-2">
+              <h4 className="font-bold text-[#111318]">Synonym Breakdown (Band 8+)</h4>
+              <div className="flex flex-wrap gap-1.5 pt-1">
+                {ieltsImprovement.improvements.higherBandVocab.map((voc, i) => (
                   <span
                     key={i}
-                    className="rounded-full bg-stone-100 px-2 py-0.5 text-[10px] text-stone-700 dark:bg-stone-800 dark:text-stone-300"
+                    className="rounded-lg bg-white border border-stone-200 px-2.5 py-1 text-[11px] font-semibold text-indigo-700"
                   >
-                    {v}
+                    {voc}
                   </span>
                 ))}
               </div>
             </div>
 
-            <div className="rounded-2xl border border-stone-100 bg-white p-4 text-xs dark:border-stone-800 dark:bg-stone-850">
-              <h4 className="font-semibold text-stone-900 dark:text-white">
-                Grammatical Structures
-              </h4>
-              <p className="mt-1.5 text-stone-600 dark:text-stone-300 leading-relaxed">
+            {/* Grammatical Architecture */}
+            <div className="rounded-2xl border border-stone-100 bg-[#FAF9F5] p-4 space-y-2">
+              <h4 className="font-bold text-[#111318]">Grammar Architecture</h4>
+              <p className="text-[#5C616B] leading-relaxed">
                 {ieltsImprovement.improvements.grammarStructures}
               </p>
             </div>
           </div>
         </div>
       )}
-
-      {/* UK vs US Dialect Reference */}
-      <div className="space-y-4">
-        <div>
-          <h3 className="text-sm font-semibold text-stone-900 dark:text-white">
-            British vs. American English in IELTS
-          </h3>
-          <p className="text-xs text-stone-400">
-            Both varieties are recognized, but consistency across your test paper is essential.
-          </p>
-        </div>
-
-        <div className="grid grid-cols-1 gap-6 lg:grid-cols-12">
-          <div className="rounded-3xl border border-stone-200/80 bg-white p-6 shadow-2xs dark:border-stone-800 dark:bg-stone-900 lg:col-span-8">
-            <h4 className="text-xs font-semibold uppercase tracking-wider text-stone-400 border-b border-stone-100 pb-3 dark:border-stone-800">
-              Common Vocabulary Differences
-            </h4>
-
-            <div className="mt-3 divide-y divide-stone-100 dark:divide-stone-800 text-xs">
-              {UK_US_VOCAB.map((item, idx) => (
-                <div key={idx} className="flex items-center justify-between py-2.5">
-                  <div className="flex items-center gap-3">
-                    <span className="font-medium text-stone-900 dark:text-white">🇬🇧 {item.uk}</span>
-                    <span className="text-stone-300">/</span>
-                    <span className="font-medium text-stone-600 dark:text-stone-300">🇺🇸 {item.us}</span>
-                  </div>
-
-                  <div className="flex items-center gap-3">
-                    <span className="text-stone-400 italic">
-                      "{item.meaning}"
-                    </span>
-                    <button
-                      onClick={() => apiService.speakText(item.uk, 'UK')}
-                      className="text-stone-400 hover:text-stone-700 dark:hover:text-stone-200"
-                    >
-                      <Volume2 className="h-3.5 w-3.5" />
-                    </button>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          <div className="rounded-3xl border border-stone-200/80 bg-white p-6 shadow-2xs dark:border-stone-800 dark:bg-stone-900 lg:col-span-4">
-            <h4 className="text-xs font-semibold uppercase tracking-wider text-stone-400 border-b border-stone-100 pb-3 dark:border-stone-800">
-              Spelling Conventions
-            </h4>
-
-            <div className="mt-3 space-y-2.5 text-xs">
-              {UK_US_SPELLINGS.map((sp, sIdx) => (
-                <div key={sIdx} className="rounded-xl bg-[#FAF9F5] p-2.5 dark:bg-stone-850">
-                  <div className="flex justify-between font-medium">
-                    <span className="text-stone-900 dark:text-white">🇬🇧 {sp.uk}</span>
-                    <span className="text-stone-600 dark:text-stone-300">🇺🇸 {sp.us}</span>
-                  </div>
-                  <span className="text-[10px] text-stone-400">{sp.rule}</span>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-      </div>
     </div>
   );
 };

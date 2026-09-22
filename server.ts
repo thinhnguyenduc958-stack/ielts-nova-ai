@@ -32,6 +32,65 @@ function getGeminiClient(): GoogleGenAI | null {
   }
 }
 
+// Model Configuration - Single configuration point
+export const AI_MODEL = process.env.GEMINI_MODEL || 'gemini-3.1-flash-lite';
+export const FALLBACK_MODELS = [AI_MODEL, 'gemini-3.8-flash'];
+
+// Standardized error classification
+export type ApiErrorCode =
+  | 'AUTH_ERROR'
+  | 'CONFIG_ERROR'
+  | 'RATE_LIMIT'
+  | 'NETWORK_ERROR'
+  | 'TIMEOUT'
+  | 'MODEL_ERROR'
+  | 'INVALID_RESPONSE'
+  | 'UNKNOWN_ERROR';
+
+function classifyError(err: any): { code: ApiErrorCode; message: string; status: number } {
+  const msg = (err?.message || String(err)).toLowerCase();
+  if (
+    msg.includes('gemini_api_key is not configured') ||
+    msg.includes('api key') ||
+    msg.includes('401') ||
+    msg.includes('403') ||
+    msg.includes('unauthenticated') ||
+    msg.includes('permission_denied')
+  ) {
+    return {
+      code: 'AUTH_ERROR',
+      message: 'NOVA is currently unavailable. Please verify API configuration.',
+      status: 401,
+    };
+  }
+  if (msg.includes('429') || msg.includes('quota') || msg.includes('resourceexhausted') || msg.includes('rate limit')) {
+    return {
+      code: 'RATE_LIMIT',
+      message: 'NOVA is receiving high traffic right now. Please try again in a few moments.',
+      status: 429,
+    };
+  }
+  if (
+    msg.includes('timeout') ||
+    msg.includes('econnreset') ||
+    msg.includes('enotfound') ||
+    msg.includes('fetch failed') ||
+    msg.includes('network') ||
+    msg.includes('aborted')
+  ) {
+    return {
+      code: 'NETWORK_ERROR',
+      message: "NOVA couldn't connect right now. Please check your connection and try again.",
+      status: 503,
+    };
+  }
+  return {
+    code: 'MODEL_ERROR',
+    message: 'Something went wrong while NOVA was responding. Please try again.',
+    status: 500,
+  };
+}
+
 // Centralized resilient Gemini caller with automatic model failover
 async function callGeminiService(
   contents: any,
@@ -47,10 +106,9 @@ async function callGeminiService(
     throw new Error('GEMINI_API_KEY is not configured in server environment');
   }
 
-  // Prioritize stable, fast models (gemini-3.1-flash-lite) with seamless fallback
   const candidateModels = options.preferredModel
-    ? [options.preferredModel, 'gemini-3.1-flash-lite', 'gemini-2.5-flash']
-    : ['gemini-3.1-flash-lite', 'gemini-2.5-flash', 'gemini-3.8-flash'];
+    ? [options.preferredModel, 'gemini-3.1-flash-lite']
+    : [AI_MODEL, 'gemini-3.1-flash-lite'];
 
   let lastError: any = null;
 
@@ -86,6 +144,177 @@ async function callGeminiService(
   throw lastError || new Error('All Gemini model candidates failed');
 }
 
+// Dynamic System Prompt Builder for IELTS NOVA AI
+function buildDynamicTutorSystemPrompt(params: {
+  userBand?: string;
+  targetBand?: string;
+  languagePreference?: string;
+  mode?: string;
+  task?: string;
+  persona?: string;
+  sessionContext?: string;
+}): string {
+  const mode = params.mode || 'general';
+  const targetBand = params.targetBand || '7.5';
+  const userBand = params.userBand || '6.0';
+  const lang = params.languagePreference || 'bilingual';
+
+  let modeSpecific = '';
+  switch (mode) {
+    case 'speaking':
+      modeSpecific = `CURRENT MODE: IELTS SPEAKING EXAMINER & COACH.
+- Conduct authentic, interactive IELTS Speaking drills (Part 1, 2, or 3).
+- Ask one question or cue card prompt at a time and wait for the candidate's answer.
+- Evaluate responses constructively: analyze Fluency & Coherence, Lexical Resource, Grammatical Range & Accuracy, and Pronunciation.
+- Offer surgical Band 8.0+ idiomatic phrases, discourse markers, and natural collocations to replace basic vocabulary.
+- If the student asks for a topic, generate authentic Cambridge IELTS Speaking topics.
+- When transitioning to a new question or part, do so smoothly and naturally.`;
+      break;
+    case 'writing':
+      modeSpecific = `CURRENT MODE: IELTS WRITING EVALUATOR & COACH.
+- Evaluate essays against official Cambridge descriptors: Task Response (TR), Coherence & Cohesion (CC), Lexical Resource (LR), Grammatical Range & Accuracy (GRA).
+- Provide concrete sentence transformations, elevated transition words, and paragraph restructuring.
+- Highlight specific strengths and weaknesses without fabricating scores.
+- Offer model sentences and excerpts demonstrating high-scoring academic cohesion.`;
+      break;
+    case 'reading':
+      modeSpecific = `CURRENT MODE: IELTS READING SPECIALIST.
+- Explain challenging reading passages, question logic (True/False/Not Given, Headings, Summary Completion).
+- Unpack paraphrase traps, distractors, and locate exact textual evidence in passages.
+- Highlight academic vocabulary and synonyms linking the question stem to the passage.`;
+      break;
+    case 'vocabulary':
+      modeSpecific = `CURRENT MODE: IELTS LEXICAL RESOURCE COACH.
+- For any queried word or topic, provide:
+  1. Core definition and contextual nuance
+  2. Natural Vietnamese translation
+  3. Phonetic pronunciation (UK and US)
+  4. 3-4 high-scoring academic collocations (Band 7.5+)
+  5. Academic IELTS example sentence
+  6. Synonyms and antonyms where relevant.`;
+      break;
+    case 'grammar':
+      modeSpecific = `CURRENT MODE: IELTS GRAMMAR SPECIALIST.
+- Break down complex grammar structures simply (e.g. Inversion, Conditionals, Relative clauses, Cleft sentences, Nominalization).
+- Point out common IELTS candidate errors and contrast with Band 8+ standard structures.
+- Provide practical drills and explain why each answer works.`;
+      break;
+    case 'translation':
+      modeSpecific = `CURRENT MODE: CONTEXTUAL IELTS TRANSLATOR.
+- Deliver natural, high-register Vietnamese <-> English translations tailored to academic IELTS discourse.
+- Avoid stiff word-for-word translation. Explain cultural or nuanced academic differences.`;
+      break;
+    default:
+      modeSpecific = `CURRENT MODE: GENERAL IELTS MASTER TUTOR.
+- Intelligently detect the student's intent: vocabulary queries, grammar help, essay feedback, speaking drills, study planning, or answer explanations.
+- If the user says "Let's practice Speaking" -> switch naturally into Speaking Examiner mode and ask the first question.
+- If the user interrupts practice to ask about a word or grammar rule -> explain it clearly, then naturally offer to return to the practice session.
+- Seamlessly understand follow-up questions and pronoun references (such as "make them harder", "why is B wrong?", "give me another example").`;
+      break;
+  }
+
+  let personaNote = '';
+  if (params.persona === 'examiner') {
+    personaNote = 'PERSONA: Strict Cambridge Examiner (rubric-driven, analytical, rigorous).';
+  } else if (params.persona === 'study_buddy') {
+    personaNote = 'PERSONA: Supportive Study Companion (warm, encouraging, clear, motivating).';
+  } else if (params.persona === 'grammar_doctor') {
+    personaNote = 'PERSONA: Grammar Doctor (syntactic precision, error diagnosis, high-band sentence transformations).';
+  } else if (params.persona === 'vocab_coach') {
+    personaNote = 'PERSONA: Vocabulary Coach (idioms, collocations, academic register, lexical sophistication).';
+  }
+
+  const contextNote = params.sessionContext
+    ? `\nCURRENT SESSION CONTEXT:\n"""${params.sessionContext.slice(0, 1500)}"""\n`
+    : '';
+
+  return `You are IELTS Nova AI, a world-class certified IELTS Master Tutor and Examiner.
+The student's current baseline is Band ${userBand}, aiming for Band ${targetBand}.
+
+CORE PHILOSOPHY & IDENTITY:
+- You are an intelligent, adaptive IELTS learning companion.
+- Be natural, conversational, clear, and academically insightful.
+- Be concise for simple questions; structured and comprehensive for complex inquiries.
+- Never say "As an AI language model..." or generic boilerplate bot phrases.
+- Avoid excessive emojis (use sparingly only when adding genuine clarity or encouragement).
+- Format responses cleanly with Markdown: bold keywords, concise bullet points, and clear sections.
+
+LANGUAGE RULES:
+- If the user writes or speaks Vietnamese, respond primarily in Vietnamese while keeping academic IELTS terminology, collocations, and examples in English.
+- If the user writes in English, respond entirely in English.
+- If language preference is set to "${lang}", adapt accordingly.
+
+${modeSpecific}
+${personaNote}
+${contextNote}
+Remember: You possess deep conversational memory. Understand follow-up questions ("give me 5 exercises", "make them harder", "explain question 2", "check this sentence") in full connection with previous turns.`;
+}
+
+// Multi-turn Conversation Sanitizer for @google/genai
+function sanitizeConversationHistory(
+  messages: any[]
+): Array<{ role: 'user' | 'model'; parts: Array<{ text: string }> }> {
+  if (!Array.isArray(messages) || messages.length === 0) {
+    return [{ role: 'user', parts: [{ text: 'Hello NOVA' }] }];
+  }
+
+  const rawTurns: Array<{ role: 'user' | 'model'; text: string }> = [];
+
+  for (const m of messages) {
+    const isUser = (m.role || m.sender) === 'user';
+    const text = (m.content || m.text || '').trim();
+    if (!text) continue;
+    rawTurns.push({
+      role: isUser ? 'user' : 'model',
+      text,
+    });
+  }
+
+  if (rawTurns.length === 0) {
+    return [{ role: 'user', parts: [{ text: 'Hello NOVA' }] }];
+  }
+
+  // Ensure first turn is 'user'
+  while (rawTurns.length > 0 && rawTurns[0].role !== 'user') {
+    rawTurns.shift();
+  }
+
+  if (rawTurns.length === 0) {
+    return [{ role: 'user', parts: [{ text: 'Hello NOVA' }] }];
+  }
+
+  // Merge consecutive same-role messages to guarantee strict role alternation
+  const alternating: Array<{ role: 'user' | 'model'; parts: Array<{ text: string }> }> = [];
+
+  for (const turn of rawTurns) {
+    const last = alternating[alternating.length - 1];
+    if (last && last.role === turn.role) {
+      last.parts[0].text += `\n\n${turn.text}`;
+    } else {
+      alternating.push({
+        role: turn.role,
+        parts: [{ text: turn.text }],
+      });
+    }
+  }
+
+  // Ensure last turn is user (model responds to the user's latest message)
+  if (alternating[alternating.length - 1].role !== 'user') {
+    alternating.push({ role: 'user', parts: [{ text: 'Please continue.' }] });
+  }
+
+  // Keep a reasonable context window of last 16 turns
+  if (alternating.length > 16) {
+    const sliced = alternating.slice(alternating.length - 16);
+    if (sliced[0].role !== 'user') {
+      sliced.shift();
+    }
+    return sliced;
+  }
+
+  return alternating;
+}
+
 // Helper to safely parse JSON from Gemini
 function parseGeminiJson<T>(rawText: string, fallback: T): T {
   try {
@@ -108,57 +337,249 @@ app.get('/api/health', (req, res) => {
     status: 'ok',
     hasApiKey: hasKey,
     geminiStatus: hasKey ? 'connected' : 'key_missing',
+    model: AI_MODEL,
   });
 });
 
-// AI Tutor Chat Route
-app.post('/api/gemini/tutor', async (req, res) => {
-  try {
-    const { messages, userBand, targetBand, languagePreference } = req.body;
-    const ai = getGeminiClient();
+// Diagnostics endpoint for AI Health Check
+app.get('/api/gemini/diagnostics', async (req, res) => {
+  const hasKey = !!process.env.GEMINI_API_KEY && process.env.GEMINI_API_KEY !== 'MY_GEMINI_API_KEY';
+  const ai = getGeminiClient();
 
-    if (!ai) {
-      // High-quality contextual fallback
-      const lastMsg = messages?.[messages.length - 1]?.text?.toLowerCase() || '';
-      let reply = "Hello! I'm Nova, your AI IELTS master coach. ";
-      if (lastMsg.includes('writing') || lastMsg.includes('task 2')) {
-        reply += `For Writing Task 2 aiming for Band ${targetBand || '7.5'}, remember the 4-paragraph structure: Introduction (Paraphrase + Thesis), Body 1 (Central topic sentence + Supporting example), Body 2 (Counterpart/Alternative + Deep analysis), and Conclusion (Restatement of stance). Make sure to use cohesive devices like 'Furthermore', 'Consequently', and 'In contrast' sparingly and naturally.`;
-      } else if (lastMsg.includes('speaking')) {
-        reply += `For Speaking Part 2 and 3, focus on the P.E.E. formula: Point, Explanation, Example. Use idiomatic language naturally (e.g. 'broaden my horizons', 'hit the nail on the head') rather than forcing archaic expressions.`;
-      } else if (lastMsg.includes('vocab') || lastMsg.includes('word')) {
-        reply += `To boost your Lexical Resource, replace overly general words: Instead of 'big problem' use 'pressing conundrum' or 'formidable dilemma'. Instead of 'good effect' use 'profoundly advantageous ramification'.`;
-      } else {
-        reply += `How can I help accelerate your preparation today? We can analyze an essay, simulate Speaking Part 2, review Band 8.0 collocations, or explain a complex grammar rule.`;
+  let reachable = false;
+  let testPingStatus = 'UNTESTED';
+  let latencyMs = 0;
+  let errorMessage: string | null = null;
+
+  if (hasKey && ai) {
+    try {
+      const pingStart = Date.now();
+      const testRes = await ai.models.generateContent({
+        model: AI_MODEL,
+        contents: 'Ping',
+        config: {
+          systemInstruction: 'Respond with exactly: PONG',
+        },
+      });
+      latencyMs = Date.now() - pingStart;
+      if (testRes.text) {
+        reachable = true;
+        testPingStatus = 'SUCCESS';
       }
-      return res.json({ text: reply, fallback: true });
+    } catch (err: any) {
+      console.warn('Diagnostics test ping error:', err?.message || err);
+      errorMessage = err?.message || 'Gemini ping failed';
+      testPingStatus = 'ERROR';
+    }
+  }
+
+  res.json({
+    status: 'ok',
+    configured: hasKey,
+    model: AI_MODEL,
+    reachable,
+    testPingStatus,
+    latencyMs,
+    error: errorMessage,
+    timestamp: new Date().toISOString(),
+  });
+});
+
+// AI Tutor Chat Route (Standard Non-streaming)
+app.post('/api/gemini/tutor', async (req, res) => {
+  const startTime = Date.now();
+  try {
+    const {
+      messages,
+      userBand,
+      targetBand,
+      languagePreference,
+      mode,
+      task,
+      persona,
+      sessionContext,
+    } = req.body;
+
+    const ai = getGeminiClient();
+    if (!ai) {
+      return res.status(503).json({
+        error: 'NOVA is currently unavailable. Please verify API configuration.',
+        code: 'AUTH_ERROR',
+        fallback: true,
+      });
     }
 
-    const systemInstruction = `You are IELTS Nova AI, a world-class certified IELTS Master Tutor and Examiner.
-The student currently has Band ${userBand || '5.5'} and targets Band ${targetBand || '7.5'}.
-Language Preference: ${languagePreference || 'bilingual (English with Vietnamese explanations where helpful)'}.
-Your role:
-- Provide clear, actionable, high-yield IELTS advice.
-- When correcting grammar or essays, provide the exact rule and high-band alternative.
-- Keep tone professional, encouraging, analytical, and structured with bullet points.
-- Never give overly vague answers. Provide concrete IELTS band 7-8 examples.`;
+    const systemInstruction = buildDynamicTutorSystemPrompt({
+      userBand,
+      targetBand,
+      languagePreference,
+      mode,
+      task,
+      persona,
+      sessionContext,
+    });
 
-    const conversationHistory = (messages || [])
-      .map((m: { sender?: string; role?: string; text?: string; content?: string }) => {
-        const isUser = (m.sender || m.role) === 'user';
-        const content = m.text || m.content || '';
-        return `${isUser ? 'Student' : 'Tutor'}: ${content}`;
-      })
-      .join('\n');
+    const contents = sanitizeConversationHistory(messages);
 
-    const result = await callGeminiService(
-      `System: ${systemInstruction}\n\nRecent Conversation:\n${conversationHistory}\n\nPlease respond as the IELTS Tutor to the student's latest question:`,
-      { systemInstruction }
-    );
+    const result = await callGeminiService(contents, {
+      systemInstruction,
+      preferredModel: AI_MODEL,
+    });
 
-    res.json({ text: result.text || 'No response generated.', fallback: false, modelUsed: result.modelUsed });
+    const latencyMs = Date.now() - startTime;
+
+    res.json({
+      text: result.text || "NOVA couldn't generate a response this time.",
+      fallback: false,
+      modelUsed: result.modelUsed,
+      latencyMs,
+    });
   } catch (error: any) {
     console.error('Tutor API error:', error?.message || error);
-    res.status(500).json({ error: 'Tutor service is temporarily unavailable. Please try again in a moment.' });
+    const classified = classifyError(error);
+    res.status(classified.status).json({
+      error: classified.message,
+      code: classified.code,
+    });
+  }
+});
+
+// AI Tutor Streaming Route (Server-Sent Events)
+app.post('/api/gemini/tutor/stream', async (req, res) => {
+  const startTime = Date.now();
+  try {
+    const {
+      messages,
+      userBand,
+      targetBand,
+      languagePreference,
+      mode,
+      task,
+      persona,
+      sessionContext,
+    } = req.body;
+
+    const ai = getGeminiClient();
+    if (!ai) {
+      return res.status(503).json({
+        error: 'NOVA is currently unavailable. Please verify API configuration.',
+        code: 'AUTH_ERROR',
+        fallback: true,
+      });
+    }
+
+    const systemInstruction = buildDynamicTutorSystemPrompt({
+      userBand,
+      targetBand,
+      languagePreference,
+      mode,
+      task,
+      persona,
+      sessionContext,
+    });
+
+    const contents = sanitizeConversationHistory(messages);
+
+    // Set SSE headers
+    res.setHeader('Content-Type', 'text/event-stream');
+    res.setHeader('Cache-Control', 'no-cache, no-transform');
+    res.setHeader('Connection', 'keep-alive');
+    res.flushHeaders?.();
+
+    let aborted = false;
+    res.on('close', () => {
+      if (!res.writableEnded) {
+        aborted = true;
+      }
+    });
+
+    let fullText = '';
+    let modelUsed = AI_MODEL;
+
+    try {
+      const responseStream = await ai.models.generateContentStream({
+        model: AI_MODEL,
+        contents,
+        config: {
+          systemInstruction,
+          temperature: 0.7,
+        },
+      });
+
+      for await (const chunk of responseStream) {
+        if (aborted || res.writableEnded) break;
+        const text = chunk.text || '';
+        if (text) {
+          fullText += text;
+          res.write(`data: ${JSON.stringify({ chunk: text })}\n\n`);
+          if (typeof (res as any).flush === 'function') {
+            (res as any).flush();
+          }
+        }
+      }
+
+      if (!res.writableEnded) {
+        const latencyMs = Date.now() - startTime;
+        res.write(
+          `data: ${JSON.stringify({ done: true, modelUsed, latencyMs, fullText })}\n\n`
+        );
+        if (typeof (res as any).flush === 'function') {
+          (res as any).flush();
+        }
+        res.end();
+      }
+    } catch (streamErr: any) {
+      console.warn(`Primary streaming model ${AI_MODEL} failed, trying fallback:`, streamErr?.message || streamErr);
+      if (!res.writableEnded && !aborted) {
+        try {
+          const fallbackStream = await ai.models.generateContentStream({
+            model: 'gemini-3.8-flash',
+            contents,
+            config: { systemInstruction, temperature: 0.7 },
+          });
+          modelUsed = 'gemini-3.8-flash';
+          for await (const chunk of fallbackStream) {
+            if (aborted || res.writableEnded) break;
+            const text = chunk.text || '';
+            if (text) {
+              fullText += text;
+              res.write(`data: ${JSON.stringify({ chunk: text })}\n\n`);
+              if (typeof (res as any).flush === 'function') {
+                (res as any).flush();
+              }
+            }
+          }
+          if (!res.writableEnded) {
+            const latencyMs = Date.now() - startTime;
+            res.write(
+              `data: ${JSON.stringify({ done: true, modelUsed, latencyMs, fullText })}\n\n`
+            );
+            if (typeof (res as any).flush === 'function') {
+              (res as any).flush();
+            }
+            res.end();
+          }
+        } catch (fbErr: any) {
+          const classified = classifyError(fbErr);
+          if (!res.writableEnded) {
+            res.write(
+              `data: ${JSON.stringify({ error: classified.message, code: classified.code })}\n\n`
+            );
+            res.end();
+          }
+        }
+      }
+    }
+  } catch (err: any) {
+    const classified = classifyError(err);
+    if (!res.headersSent) {
+      res.status(classified.status).json({ error: classified.message, code: classified.code });
+    } else {
+      res.write(
+        `data: ${JSON.stringify({ error: classified.message, code: classified.code })}\n\n`
+      );
+      res.end();
+    }
   }
 });
 

@@ -51,7 +51,12 @@ export const HomeDashboard: React.FC = () => {
   return (
     <div className="mx-auto max-w-5xl space-y-12 pb-24 text-[#111318] bg-white">
       {/* 8. HOME HERO: Sophisticated Editorial Composition (~50% viewport) */}
-      <section className="relative pt-3 pb-4">
+      <motion.section
+        initial={{ opacity: 0, y: 8 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.4, ease: 'easeOut' }}
+        className="relative pt-3 pb-4"
+      >
         <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-10">
           {/* Left Column: Editorial Typography */}
           <div className="max-w-xl space-y-4">
@@ -93,7 +98,7 @@ export const HomeDashboard: React.FC = () => {
             </div>
           </div>
 
-          {/* Right Column: Signature NOVA AI Core on White Circular Pedestal */}
+          {/* Right Column: Signature NOVA AI Core 2.0 on White Pedestal */}
           <div className="relative flex flex-col items-center justify-center self-center lg:self-auto rounded-3xl border border-indigo-100/80 bg-white p-6 sm:p-8 shadow-[0_12px_40px_-15px_rgba(79,70,229,0.08)] w-full lg:w-auto min-w-[280px] sm:min-w-[320px]">
             <NovaOrb
               size="hero"
@@ -116,9 +121,9 @@ export const HomeDashboard: React.FC = () => {
             </div>
           </div>
         </div>
-      </section>
+      </motion.section>
 
-      {/* 11. CONTINUE LEARNING: Large Editorial Section on #F5F3FF */}
+      {/* 11. CONTINUE LEARNING: Large Editorial Section on #F6F4FF */}
       <section className="space-y-3">
         <div className="flex items-center justify-between">
           <p className="text-xs font-bold tracking-widest uppercase text-[#5C616B]">
@@ -129,7 +134,7 @@ export const HomeDashboard: React.FC = () => {
           </span>
         </div>
 
-        <div className="relative overflow-hidden rounded-2xl border border-indigo-100 bg-[#F5F3FF] p-6 sm:p-8 shadow-xs">
+        <div className="relative overflow-hidden rounded-2xl border border-indigo-100/90 bg-[#F6F4FF] p-6 sm:p-8 shadow-xs">
           {/* Subtle Decorative Waveform Illustration */}
           <div className="absolute right-6 top-6 opacity-20 pointer-events-none hidden sm:flex items-center gap-1">
             {[18, 36, 24, 48, 20, 40, 28, 52, 16, 32].map((h, i) => (
@@ -382,15 +387,14 @@ export const HomeDashboard: React.FC = () => {
               NOVA'S INSIGHT
             </h3>
             <p className="text-sm sm:text-base font-medium text-[#111318] leading-relaxed">
-              "Your vocabulary usage has improved this week. Your next opportunity is Speaking fluency."
+              "Your vocabulary usage improved this week. Let's strengthen your Speaking fluency next."
             </p>
             <div className="pt-2">
               <button
                 onClick={() => setCurrentTab('speaking')}
                 className="inline-flex items-center gap-2 rounded-xl bg-indigo-600 px-4 py-2.5 text-xs font-bold text-white hover:bg-indigo-700 transition-colors cursor-pointer"
               >
-                <span>Practice Speaking</span>
-                <ArrowRight className="h-3.5 w-3.5" />
+                <span>Practice Speaking →</span>
               </button>
             </div>
           </div>

@@ -116,13 +116,13 @@ export const WritingModule: React.FC = () => {
     showToast('AI suggestion applied to your draft.');
   };
 
-  const handleSaveSuggestedWord = (w: { word: string; pos: string; meaning: string; context: string }) => {
+  const handleSaveSuggestedWord = (w: { word: string; pos?: string; meaning: string; context?: string }) => {
     addVocabulary({
       word: w.word,
       meaning: w.meaning,
       contextMeaning: w.meaning,
-      partOfSpeech: w.pos,
-      sourceContext: w.context,
+      partOfSpeech: w.pos || 'academic',
+      sourceContext: w.context || '',
       ieltsRelevance: `Writing Task 2 Band 8.0 Recommendation`,
     });
     showToast(`Saved "${w.word}" to Lexicon Vault!`);
