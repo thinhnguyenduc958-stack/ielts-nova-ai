@@ -20,11 +20,6 @@ function getGeminiClient(): GoogleGenAI | null {
   try {
     return new GoogleGenAI({
       apiKey: apiKey.trim(),
-      httpOptions: {
-        headers: {
-          'User-Agent': 'aistudio-build',
-        },
-      },
     });
   } catch (err) {
     console.error('Failed to instantiate GoogleGenAI:', err);
@@ -32,62 +27,295 @@ function getGeminiClient(): GoogleGenAI | null {
   }
 }
 
-// Model Configuration - Single configuration point
-export const AI_MODEL = process.env.GEMINI_MODEL || 'gemini-3.1-flash-lite';
-export const FALLBACK_MODELS = [AI_MODEL, 'gemini-3.8-flash'];
+// Model Configuration - Cascade for bulletproof reliability
+export const AI_MODEL = process.env.GEMINI_MODEL || 'gemini-3.8-flash';
+export const CANDIDATE_MODELS = [
+  AI_MODEL,
+  'gemini-3.6-flash',
+  'gemini-3.1-flash-lite',
+].filter((m, idx, arr) => arr.indexOf(m) === idx);
+export const FALLBACK_MODEL = CANDIDATE_MODELS[1] || 'gemini-3.6-flash';
 
-// Standardized error classification
-export type ApiErrorCode =
-  | 'AUTH_ERROR'
-  | 'CONFIG_ERROR'
-  | 'RATE_LIMIT'
-  | 'NETWORK_ERROR'
+// Development Diagnostic Logger (strictly never logs API keys, tokens, or secrets)
+function logNovaDiagnostic(stage: string, data: Record<string, any>) {
+  const safeData: Record<string, any> = {};
+  for (const [key, val] of Object.entries(data)) {
+    if (
+      key.toLowerCase().includes('key') ||
+      key.toLowerCase().includes('secret') ||
+      key.toLowerCase().includes('token') ||
+      key.toLowerCase().includes('auth')
+    ) {
+      continue;
+    }
+    safeData[key] = val;
+  }
+  console.log(`[NOVA Diagnostic] [${new Date().toISOString()}] ${stage}:`, JSON.stringify(safeData));
+}
+
+// 11 Specific Error Categories requested by prompt section 9
+export type NovaErrorCategory =
+  | 'AUTHENTICATION ERROR'
+  | 'INVALID API KEY'
+  | 'MODEL ERROR'
+  | 'RATE LIMIT'
+  | 'QUOTA'
+  | 'NETWORK ERROR'
   | 'TIMEOUT'
-  | 'MODEL_ERROR'
-  | 'INVALID_RESPONSE'
-  | 'UNKNOWN_ERROR';
+  | 'INVALID REQUEST'
+  | 'INVALID RESPONSE'
+  | 'SERVER ERROR'
+  | 'UNKNOWN ERROR';
 
-function classifyError(err: any): { code: ApiErrorCode; message: string; status: number } {
-  const msg = (err?.message || String(err)).toLowerCase();
+export interface ClassifiedNovaError {
+  category: NovaErrorCategory;
+  userMessage: string;
+  technicalDetails: string;
+  status: number;
+}
+
+export function classifyNovaError(err: any): ClassifiedNovaError {
+  const msg = (err?.message || String(err || '')).toLowerCase();
+  const status = err?.status || err?.statusCode || 500;
+
   if (
     msg.includes('gemini_api_key is not configured') ||
-    msg.includes('api key') ||
-    msg.includes('401') ||
-    msg.includes('403') ||
-    msg.includes('unauthenticated') ||
-    msg.includes('permission_denied')
+    msg.includes('api key not found') ||
+    msg.includes('missing api key')
   ) {
     return {
-      code: 'AUTH_ERROR',
-      message: 'NOVA is currently unavailable. Please verify API configuration.',
+      category: 'AUTHENTICATION ERROR',
+      userMessage: 'NOVA is currently unavailable. Please verify API configuration.',
+      technicalDetails: 'GEMINI_API_KEY environment variable is not configured or is empty.',
       status: 401,
     };
   }
-  if (msg.includes('429') || msg.includes('quota') || msg.includes('resourceexhausted') || msg.includes('rate limit')) {
+
+  if (
+    msg.includes('api_key_invalid') ||
+    msg.includes('invalid api key') ||
+    msg.includes('api key expired') ||
+    msg.includes('unauthenticated') ||
+    msg.includes('permission_denied') ||
+    status === 401
+  ) {
     return {
-      code: 'RATE_LIMIT',
-      message: 'NOVA is receiving high traffic right now. Please try again in a few moments.',
+      category: 'INVALID API KEY',
+      userMessage: 'NOVA is currently unavailable. Please check your credentials.',
+      technicalDetails: 'Provided API key is invalid or lacks necessary permissions.',
+      status: 401,
+    };
+  }
+
+  if (
+    msg.includes('quota') ||
+    msg.includes('resource_exhausted') ||
+    msg.includes('insufficient quota')
+  ) {
+    return {
+      category: 'QUOTA',
+      userMessage: 'NOVA is receiving high demand right now. Please try again in a few moments.',
+      technicalDetails: 'Gemini project quota limit reached.',
       status: 429,
     };
   }
+
   if (
-    msg.includes('timeout') ||
-    msg.includes('econnreset') ||
-    msg.includes('enotfound') ||
-    msg.includes('fetch failed') ||
-    msg.includes('network') ||
-    msg.includes('aborted')
+    msg.includes('429') ||
+    msg.includes('rate limit') ||
+    msg.includes('too many requests')
   ) {
     return {
-      code: 'NETWORK_ERROR',
-      message: "NOVA couldn't connect right now. Please check your connection and try again.",
+      category: 'RATE LIMIT',
+      userMessage: 'NOVA is busy processing requests. Please wait a moment and try again.',
+      technicalDetails: 'Rate limit hit on Gemini endpoint.',
+      status: 429,
+    };
+  }
+
+  if (
+    msg.includes('timeout') ||
+    msg.includes('etimedout') ||
+    msg.includes('deadline exceeded')
+  ) {
+    return {
+      category: 'TIMEOUT',
+      userMessage: "NOVA couldn't connect right now. The request timed out.",
+      technicalDetails: 'Request to Gemini service timed out.',
+      status: 504,
+    };
+  }
+
+  if (
+    msg.includes('fetch failed') ||
+    msg.includes('econnreset') ||
+    msg.includes('enotfound') ||
+    msg.includes('network') ||
+    msg.includes('connection refused')
+  ) {
+    return {
+      category: 'NETWORK ERROR',
+      userMessage: "NOVA couldn't connect right now. Please check your network connection.",
+      technicalDetails: 'Network connectivity failure between server and Gemini API.',
       status: 503,
     };
   }
+
+  if (
+    msg.includes('invalid argument') ||
+    msg.includes('bad request') ||
+    status === 400
+  ) {
+    return {
+      category: 'INVALID REQUEST',
+      userMessage: 'NOVA received an invalid request format.',
+      technicalDetails: 'Payload structure, contents, or schema was malformed.',
+      status: 400,
+    };
+  }
+
+  if (
+    msg.includes('json parse') ||
+    msg.includes('invalid json') ||
+    msg.includes('unexpected token')
+  ) {
+    return {
+      category: 'INVALID RESPONSE',
+      userMessage: "NOVA couldn't format the response properly.",
+      technicalDetails: 'Failed to parse JSON response from model output.',
+      status: 502,
+    };
+  }
+
+  if (
+    msg.includes('model not found') ||
+    msg.includes('unsupported model') ||
+    msg.includes('not supported for this model')
+  ) {
+    return {
+      category: 'MODEL ERROR',
+      userMessage: 'NOVA model is currently updating. Please try again momentarily.',
+      technicalDetails: 'The requested model is unavailable, deprecated, or inaccessible.',
+      status: 500,
+    };
+  }
+
+  if (
+    msg.includes('high demand') ||
+    msg.includes('spikes in demand') ||
+    msg.includes('unavailable') ||
+    (status >= 500 && status < 600)
+  ) {
+    return {
+      category: 'SERVER ERROR',
+      userMessage: 'NOVA is experiencing temporary high traffic. Please try again in a moment.',
+      technicalDetails: msg || `Server returned HTTP status ${status}.`,
+      status: status >= 500 && status < 600 ? status : 503,
+    };
+  }
+
   return {
-    code: 'MODEL_ERROR',
-    message: 'Something went wrong while NOVA was responding. Please try again.',
+    category: 'UNKNOWN ERROR',
+    userMessage: "NOVA couldn't connect right now. Please try again.",
+    technicalDetails: msg || 'An unknown error occurred during execution.',
     status: 500,
+  };
+}
+
+// Development AI Health Check Function (Prompt Section 10)
+export async function checkNovaAI(): Promise<{
+  aiStatus: 'CONNECTED' | 'FAILED';
+  model: string;
+  testGeneration: 'SUCCESS' | 'FAILED';
+  responseParsing: 'SUCCESS' | 'FAILED';
+  latencyMs: number;
+  reason?: string;
+  category?: NovaErrorCategory;
+  timestamp: string;
+}> {
+  const startTime = Date.now();
+  const apiKey = process.env.GEMINI_API_KEY;
+
+  if (!apiKey || apiKey === 'MY_GEMINI_API_KEY' || apiKey.trim().length === 0) {
+    return {
+      aiStatus: 'FAILED',
+      model: AI_MODEL,
+      testGeneration: 'FAILED',
+      responseParsing: 'FAILED',
+      latencyMs: 0,
+      reason: 'GEMINI_API_KEY is not configured in server environment',
+      category: 'AUTHENTICATION ERROR',
+      timestamp: new Date().toISOString(),
+    };
+  }
+
+  const ai = getGeminiClient();
+  if (!ai) {
+    return {
+      aiStatus: 'FAILED',
+      model: AI_MODEL,
+      testGeneration: 'FAILED',
+      responseParsing: 'FAILED',
+      latencyMs: 0,
+      reason: 'Failed to instantiate GoogleGenAI client',
+      category: 'AUTHENTICATION ERROR',
+      timestamp: new Date().toISOString(),
+    };
+  }
+
+  let lastError: any = null;
+  let modelTested = AI_MODEL;
+
+  for (const model of CANDIDATE_MODELS) {
+    modelTested = model;
+    try {
+      const pingStart = Date.now();
+      const testResp = await ai.models.generateContent({
+        model,
+        contents: 'Hello NOVA, reply with: {"status":"ok","greeting":"Hi"}',
+        config: {
+          responseMimeType: 'application/json',
+        },
+      });
+
+      const latencyMs = Date.now() - pingStart;
+      const rawText = testResp.text || '';
+
+      let parsingSuccess = false;
+      try {
+        const parsed = JSON.parse(rawText);
+        if (parsed && (parsed.status || parsed.greeting)) {
+          parsingSuccess = true;
+        }
+      } catch {
+        parsingSuccess = rawText.length > 0;
+      }
+
+      return {
+        aiStatus: 'CONNECTED',
+        model,
+        testGeneration: 'SUCCESS',
+        responseParsing: parsingSuccess ? 'SUCCESS' : 'FAILED',
+        latencyMs,
+        timestamp: new Date().toISOString(),
+      };
+    } catch (err: any) {
+      lastError = err;
+      console.warn(`[checkNovaAI] Model ${model} health check ping failed:`, err?.message || err);
+    }
+  }
+
+  const latencyMs = Date.now() - startTime;
+  const classified = classifyNovaError(lastError);
+  return {
+    aiStatus: 'FAILED',
+    model: modelTested,
+    testGeneration: 'FAILED',
+    responseParsing: 'FAILED',
+    latencyMs,
+    reason: classified.technicalDetails || lastError?.message || 'Generation failed',
+    category: classified.category,
+    timestamp: new Date().toISOString(),
   };
 }
 
@@ -101,14 +329,22 @@ async function callGeminiService(
     preferredModel?: string;
   } = {}
 ): Promise<{ text: string; modelUsed: string }> {
+  const startTime = Date.now();
   const ai = getGeminiClient();
   if (!ai) {
     throw new Error('GEMINI_API_KEY is not configured in server environment');
   }
 
-  const candidateModels = options.preferredModel
-    ? [options.preferredModel, 'gemini-3.1-flash-lite']
-    : [AI_MODEL, 'gemini-3.1-flash-lite'];
+  const primaryModel = options.preferredModel || AI_MODEL;
+  const candidateModels = [primaryModel, ...CANDIDATE_MODELS].filter(
+    (m, idx, arr) => arr.indexOf(m) === idx
+  );
+
+  logNovaDiagnostic('CALL_SERVICE_STARTED', {
+    models: candidateModels,
+    hasSystemInstruction: !!options.systemInstruction,
+    hasSchema: !!options.responseSchema,
+  });
 
   let lastError: any = null;
 
@@ -131,12 +367,26 @@ async function callGeminiService(
         ...(Object.keys(config).length > 0 ? { config } : {}),
       });
 
+      const latencyMs = Date.now() - startTime;
+      const text = response.text || '';
+
+      logNovaDiagnostic('CALL_SERVICE_SUCCESS', {
+        modelUsed: model,
+        latencyMs,
+        outputLength: text.length,
+      });
+
       return {
-        text: response.text || '',
+        text,
         modelUsed: model,
       };
     } catch (err: any) {
-      console.warn(`Model ${model} attempt failed:`, err?.message || err);
+      const classified = classifyNovaError(err);
+      logNovaDiagnostic('MODEL_ATTEMPT_FAILED', {
+        model,
+        category: classified.category,
+        error: classified.technicalDetails,
+      });
       lastError = err;
     }
   }
@@ -330,7 +580,7 @@ function parseGeminiJson<T>(rawText: string, fallback: T): T {
   }
 }
 
-// Health check
+// Standard app health check
 app.get('/api/health', (req, res) => {
   const hasKey = !!process.env.GEMINI_API_KEY && process.env.GEMINI_API_KEY !== 'MY_GEMINI_API_KEY';
   res.json({
@@ -341,47 +591,28 @@ app.get('/api/health', (req, res) => {
   });
 });
 
-// Diagnostics endpoint for AI Health Check
+// Dedicated internal AI Health Check endpoint (Section 10)
+app.get('/api/gemini/health-check', async (req, res) => {
+  const result = await checkNovaAI();
+  res.status(result.aiStatus === 'CONNECTED' ? 200 : 503).json(result);
+});
+
+// Diagnostics endpoint for AI Health Check and UI modals
 app.get('/api/gemini/diagnostics', async (req, res) => {
+  const health = await checkNovaAI();
   const hasKey = !!process.env.GEMINI_API_KEY && process.env.GEMINI_API_KEY !== 'MY_GEMINI_API_KEY';
-  const ai = getGeminiClient();
-
-  let reachable = false;
-  let testPingStatus = 'UNTESTED';
-  let latencyMs = 0;
-  let errorMessage: string | null = null;
-
-  if (hasKey && ai) {
-    try {
-      const pingStart = Date.now();
-      const testRes = await ai.models.generateContent({
-        model: AI_MODEL,
-        contents: 'Ping',
-        config: {
-          systemInstruction: 'Respond with exactly: PONG',
-        },
-      });
-      latencyMs = Date.now() - pingStart;
-      if (testRes.text) {
-        reachable = true;
-        testPingStatus = 'SUCCESS';
-      }
-    } catch (err: any) {
-      console.warn('Diagnostics test ping error:', err?.message || err);
-      errorMessage = err?.message || 'Gemini ping failed';
-      testPingStatus = 'ERROR';
-    }
-  }
 
   res.json({
-    status: 'ok',
+    status: health.aiStatus === 'CONNECTED' ? 'ok' : 'error',
     configured: hasKey,
-    model: AI_MODEL,
-    reachable,
-    testPingStatus,
-    latencyMs,
-    error: errorMessage,
-    timestamp: new Date().toISOString(),
+    model: health.model,
+    reachable: health.aiStatus === 'CONNECTED',
+    testPingStatus: health.testGeneration,
+    responseParsing: health.responseParsing,
+    latencyMs: health.latencyMs,
+    error: health.reason || null,
+    category: health.category || null,
+    timestamp: health.timestamp,
   });
 });
 
@@ -402,12 +633,22 @@ app.post('/api/gemini/tutor', async (req, res) => {
 
     const ai = getGeminiClient();
     if (!ai) {
+      logNovaDiagnostic('TUTOR_AUTH_MISSING', { endpoint: '/api/gemini/tutor' });
       return res.status(503).json({
         error: 'NOVA is currently unavailable. Please verify API configuration.',
+        category: 'AUTHENTICATION ERROR',
         code: 'AUTH_ERROR',
         fallback: true,
       });
     }
+
+    logNovaDiagnostic('TUTOR_REQUEST_STARTED', {
+      endpoint: '/api/gemini/tutor',
+      model: AI_MODEL,
+      messageCount: Array.isArray(messages) ? messages.length : 0,
+      mode: mode || 'auto',
+      persona: persona || 'examiner',
+    });
 
     const systemInstruction = buildDynamicTutorSystemPrompt({
       userBand,
@@ -428,6 +669,13 @@ app.post('/api/gemini/tutor', async (req, res) => {
 
     const latencyMs = Date.now() - startTime;
 
+    logNovaDiagnostic('TUTOR_REQUEST_SUCCESS', {
+      endpoint: '/api/gemini/tutor',
+      modelUsed: result.modelUsed,
+      latencyMs,
+      responseLength: (result.text || '').length,
+    });
+
     res.json({
       text: result.text || "NOVA couldn't generate a response this time.",
       fallback: false,
@@ -435,11 +683,18 @@ app.post('/api/gemini/tutor', async (req, res) => {
       latencyMs,
     });
   } catch (error: any) {
-    console.error('Tutor API error:', error?.message || error);
-    const classified = classifyError(error);
+    const classified = classifyNovaError(error);
+    logNovaDiagnostic('TUTOR_REQUEST_ERROR', {
+      endpoint: '/api/gemini/tutor',
+      category: classified.category,
+      status: classified.status,
+      details: classified.technicalDetails,
+    });
     res.status(classified.status).json({
-      error: classified.message,
-      code: classified.code,
+      error: classified.userMessage,
+      category: classified.category,
+      code: classified.category,
+      details: process.env.NODE_ENV !== 'production' ? classified.technicalDetails : undefined,
     });
   }
 });
@@ -461,12 +716,22 @@ app.post('/api/gemini/tutor/stream', async (req, res) => {
 
     const ai = getGeminiClient();
     if (!ai) {
+      logNovaDiagnostic('STREAM_AUTH_MISSING', { endpoint: '/api/gemini/tutor/stream' });
       return res.status(503).json({
         error: 'NOVA is currently unavailable. Please verify API configuration.',
+        category: 'AUTHENTICATION ERROR',
         code: 'AUTH_ERROR',
         fallback: true,
       });
     }
+
+    logNovaDiagnostic('STREAM_REQUEST_STARTED', {
+      endpoint: '/api/gemini/tutor/stream',
+      model: AI_MODEL,
+      messageCount: Array.isArray(messages) ? messages.length : 0,
+      mode: mode || 'auto',
+      persona: persona || 'examiner',
+    });
 
     const systemInstruction = buildDynamicTutorSystemPrompt({
       userBand,
@@ -480,10 +745,11 @@ app.post('/api/gemini/tutor/stream', async (req, res) => {
 
     const contents = sanitizeConversationHistory(messages);
 
-    // Set SSE headers
+    // Set SSE headers (including X-Accel-Buffering to prevent proxy buffering)
     res.setHeader('Content-Type', 'text/event-stream');
     res.setHeader('Cache-Control', 'no-cache, no-transform');
     res.setHeader('Connection', 'keep-alive');
+    res.setHeader('X-Accel-Buffering', 'no');
     res.flushHeaders?.();
 
     let aborted = false;
@@ -494,89 +760,97 @@ app.post('/api/gemini/tutor/stream', async (req, res) => {
     });
 
     let fullText = '';
-    let modelUsed = AI_MODEL;
+    let streamSuccess = false;
+    let lastStreamError: any = null;
 
-    try {
-      const responseStream = await ai.models.generateContentStream({
-        model: AI_MODEL,
-        contents,
-        config: {
-          systemInstruction,
-          temperature: 0.7,
-        },
-      });
+    for (const model of CANDIDATE_MODELS) {
+      if (aborted || res.writableEnded) break;
+      try {
+        logNovaDiagnostic('STREAM_ATTEMPT_START', { model });
+        const responseStream = await ai.models.generateContentStream({
+          model,
+          contents,
+          config: {
+            systemInstruction,
+            temperature: 0.7,
+          },
+        });
 
-      for await (const chunk of responseStream) {
-        if (aborted || res.writableEnded) break;
-        const text = chunk.text || '';
-        if (text) {
-          fullText += text;
-          res.write(`data: ${JSON.stringify({ chunk: text })}\n\n`);
-          if (typeof (res as any).flush === 'function') {
-            (res as any).flush();
-          }
-        }
-      }
-
-      if (!res.writableEnded) {
-        const latencyMs = Date.now() - startTime;
-        res.write(
-          `data: ${JSON.stringify({ done: true, modelUsed, latencyMs, fullText })}\n\n`
-        );
-        if (typeof (res as any).flush === 'function') {
-          (res as any).flush();
-        }
-        res.end();
-      }
-    } catch (streamErr: any) {
-      console.warn(`Primary streaming model ${AI_MODEL} failed, trying fallback:`, streamErr?.message || streamErr);
-      if (!res.writableEnded && !aborted) {
-        try {
-          const fallbackStream = await ai.models.generateContentStream({
-            model: 'gemini-3.8-flash',
-            contents,
-            config: { systemInstruction, temperature: 0.7 },
-          });
-          modelUsed = 'gemini-3.8-flash';
-          for await (const chunk of fallbackStream) {
-            if (aborted || res.writableEnded) break;
-            const text = chunk.text || '';
-            if (text) {
-              fullText += text;
-              res.write(`data: ${JSON.stringify({ chunk: text })}\n\n`);
-              if (typeof (res as any).flush === 'function') {
-                (res as any).flush();
-              }
-            }
-          }
-          if (!res.writableEnded) {
-            const latencyMs = Date.now() - startTime;
-            res.write(
-              `data: ${JSON.stringify({ done: true, modelUsed, latencyMs, fullText })}\n\n`
-            );
+        for await (const chunk of responseStream) {
+          if (aborted || res.writableEnded) break;
+          const text = chunk.text || '';
+          if (text) {
+            fullText += text;
+            res.write(`data: ${JSON.stringify({ chunk: text })}\n\n`);
             if (typeof (res as any).flush === 'function') {
               (res as any).flush();
             }
-            res.end();
           }
-        } catch (fbErr: any) {
-          const classified = classifyError(fbErr);
-          if (!res.writableEnded) {
-            res.write(
-              `data: ${JSON.stringify({ error: classified.message, code: classified.code })}\n\n`
-            );
-            res.end();
+        }
+
+        if (!res.writableEnded && !aborted) {
+          const latencyMs = Date.now() - startTime;
+          logNovaDiagnostic('STREAM_SUCCESS', {
+            modelUsed: model,
+            latencyMs,
+            outputLength: fullText.length,
+          });
+          res.write(
+            `data: ${JSON.stringify({ done: true, modelUsed: model, latencyMs, fullText })}\n\n`
+          );
+          if (typeof (res as any).flush === 'function') {
+            (res as any).flush();
           }
+          res.end();
+        }
+        streamSuccess = true;
+        break; // Successfully completed stream
+      } catch (streamErr: any) {
+        lastStreamError = streamErr;
+        const classified = classifyNovaError(streamErr);
+        logNovaDiagnostic('STREAM_ATTEMPT_FAILED', {
+          model,
+          category: classified.category,
+          error: classified.technicalDetails,
+        });
+        // If we already wrote partial content to the client, don't try another model mid-stream
+        if (fullText.length > 0) {
+          break;
         }
       }
     }
+
+    if (!streamSuccess && !res.writableEnded && !aborted) {
+      const classified = classifyNovaError(lastStreamError);
+      res.write(
+        `data: ${JSON.stringify({
+          error: classified.userMessage,
+          category: classified.category,
+          code: classified.category,
+        })}\n\n`
+      );
+      res.end();
+    }
   } catch (err: any) {
-    const classified = classifyError(err);
+    const classified = classifyNovaError(err);
+    logNovaDiagnostic('STREAM_FATAL_ERROR', {
+      category: classified.category,
+      status: classified.status,
+      error: classified.technicalDetails,
+    });
     if (!res.headersSent) {
-      res.status(classified.status).json({ error: classified.message, code: classified.code });
+      res.status(classified.status).json({
+        error: classified.userMessage,
+        category: classified.category,
+        code: classified.category,
+      });
     } else {
       res.write(
-        `data: ${JSON.stringify({ error: classified.message, code: classified.code })}\n\n`
+        `data: ${JSON.stringify({
+          error: classified.userMessage,
+          category: classified.category,
+          code: classified.category,
+        })}\n\n`
       );
       res.end();
     }

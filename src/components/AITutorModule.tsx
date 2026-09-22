@@ -204,7 +204,15 @@ export const AITutorModule: React.FC = () => {
   };
 
   const handleSendMessage = async (textToSend?: string, isRetry = false) => {
-    const text = (textToSend || inputText).trim();
+    let userText = textToSend;
+    if (isRetry && !userText) {
+      const lastUserMsg = [...messages].reverse().find((m) => m.role === 'user');
+      userText = lastUserMsg?.content || '';
+    } else if (!userText) {
+      userText = inputText;
+    }
+
+    const text = (userText || '').trim();
     if (!text || isStreaming) return;
 
     // Abort previous if any

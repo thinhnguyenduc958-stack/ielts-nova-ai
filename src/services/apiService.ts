@@ -21,6 +21,33 @@ export interface TutorChatOptions {
 }
 
 export const apiService = {
+  async checkNovaAI() {
+    try {
+      const res = await fetch('/api/gemini/health-check');
+      return (await res.json()) as {
+        aiStatus: 'CONNECTED' | 'FAILED';
+        model: string;
+        testGeneration: 'SUCCESS' | 'FAILED';
+        responseParsing: 'SUCCESS' | 'FAILED';
+        latencyMs: number;
+        reason?: string;
+        category?: string;
+        timestamp: string;
+      };
+    } catch (err: any) {
+      return {
+        aiStatus: 'FAILED' as const,
+        model: 'unknown',
+        testGeneration: 'FAILED' as const,
+        responseParsing: 'FAILED' as const,
+        latencyMs: 0,
+        reason: err?.message || 'Failed to ping AI health check',
+        category: 'NETWORK ERROR',
+        timestamp: new Date().toISOString(),
+      };
+    }
+  },
+
   async getDiagnostics() {
     try {
       const res = await fetch('/api/gemini/diagnostics');
@@ -61,7 +88,7 @@ export const apiService = {
       try {
         errData = await res.json();
       } catch {}
-      throw new Error(errData.error || 'Failed to get tutor response');
+      throw new Error(errData.error || "NOVA couldn't connect right now.");
     }
     return res.json() as Promise<{
       text: string;
@@ -89,15 +116,26 @@ export const apiService = {
       });
 
       if (!res.ok) {
-        let errData: any = {};
+        // Attempt immediate non-streaming fallback
         try {
-          errData = await res.json();
-        } catch {}
-        callbacks.onError({
-          message: errData.error || 'NOVA is currently unavailable. Please try again.',
-          code: errData.code || 'HTTP_ERROR',
-        });
-        return;
+          const fallbackRes = await this.tutorChat(options, signal);
+          callbacks.onChunk(fallbackRes.text);
+          callbacks.onDone(fallbackRes.text, {
+            modelUsed: fallbackRes.modelUsed,
+            latencyMs: fallbackRes.latencyMs,
+          });
+          return;
+        } catch (fbErr: any) {
+          let errData: any = {};
+          try {
+            errData = await res.json();
+          } catch {}
+          callbacks.onError({
+            message: errData.error || fbErr?.message || "NOVA couldn't connect right now.",
+            code: errData.category || errData.code || 'HTTP_ERROR',
+          });
+          return;
+        }
       }
 
       const reader = res.body?.getReader();
@@ -137,7 +175,7 @@ export const apiService = {
               return;
             }
             if (data.error) {
-              callbacks.onError({ message: data.error, code: data.code });
+              callbacks.onError({ message: data.error, code: data.category || data.code });
               return;
             }
           } catch (parseErr) {
@@ -153,10 +191,22 @@ export const apiService = {
         // Clean user cancellation via Stop button
         return;
       }
-      callbacks.onError({
-        message: "NOVA couldn't connect right now. Please check your connection and try again.",
-        code: 'NETWORK_ERROR',
-      });
+
+      // If streaming connection errored before receiving any chunks, fallback to standard tutorChat
+      try {
+        const fallbackRes = await this.tutorChat(options, signal);
+        callbacks.onChunk(fallbackRes.text);
+        callbacks.onDone(fallbackRes.text, {
+          modelUsed: fallbackRes.modelUsed,
+          latencyMs: fallbackRes.latencyMs,
+        });
+        return;
+      } catch (fbErr: any) {
+        callbacks.onError({
+          message: fbErr?.message || "NOVA couldn't connect right now. Please check your connection and try again.",
+          code: 'NETWORK_ERROR',
+        });
+      }
     }
   },
 
